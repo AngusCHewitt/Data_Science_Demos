@@ -1,0 +1,71 @@
+load_csv_files_in_folder <- function(file_path) { 
+##-- read in all csvs files within a folder
+
+library(data.table)
+library(magrittr)
+library(tidyverse)
+
+filenames = list.files(path = file_path,   pattern="*.csv",  full.names = TRUE)
+filenames_concat = list.files(path = file_path,   pattern="*.csv",  full.names = FALSE)
+
+lapply(filenames, fread) %>% 
+  set_names(filenames_concat) %>% 
+  rbindlist(idcol = "origin") -> fin_data
+fin_data
+
+}
+
+
+##-- exclude obs not in vector 
+`%notin%` <- Negate(`%in%`)
+
+
+iferror_Fun <- function(code, silent = FALSE) {
+##-- The R equivalent to Excel's IfERROR function
+##-- if code returns an error send an Error message "alt code in message box if want diff result"
+tryCatch(code, error = function(c) {
+if (!silent) {"Error Message"}
+else{code}})
+}
+
+
+dims_list <- function(...) {
+ # print dim of all dataset in a list
+  dim_list <- list(...)
+  
+  dimensions <- map(dim_list,dim)
+  dimensions}
+
+
+data_details <- function(x) {
+  
+  ##-- print obj data type an class for each col in df
+  colname <- names(x)
+  
+  # loop through each element of x to retrieve element types
+  types <- vector("character",ncol(x))
+  for(i in seq_along(x)) {
+    types[[i]] <- typeof(x[[i]]) 
+  }
+  
+  # loop through each element of x to retrieve element classes
+  classes <- vector("character",ncol(x))
+  for(i in seq_along(x)) {
+    classes[[i]] <- stringi::stri_flatten(class(x[[i]])) 
+    
+    # capture 1st row for each col.  
+    start_row <-(x[1,1:ncol(x)])
+    first_obs <- as.vector(t(start_row))
+    
+    # capture Last row for each col.
+    end_row <- (x[nrow(x),1:ncol(x)])
+    last_obs <- as.vector(t(end_row))
+    
+    
+  }
+  data.frame(colname,types,classes,first_obs,last_obs) # return results as d.f.
+}
+
+
+
+
