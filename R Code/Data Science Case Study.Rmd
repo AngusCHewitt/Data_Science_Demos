@@ -1,0 +1,279 @@
+---
+title: "Data Science Case Study"
+output: html_document
+---
+
+```{r setup, include=FALSE, echo=FALSE, warning=FALSE}
+knitr::opts_chunk$set(
+	echo = TRUE,
+	message = FALSE,
+	warning = FALSE
+)
+
+
+##-- EDA  delinquency dataset
+library(tidyverse) # tody data
+library(corrplot) # auto corr plot
+library(lubridate) # tidy dates
+library(cluster) # cluster funs
+library(nnet) # neuro netowkrs
+library(FactoMineR) # PCA mods
+library(factoextra) # PCa extars
+
+deliq_dt <- read_csv("data/teleco_dt.csv") # read in core dt
+source("~/Desktop/R functions/Cluster analysis and mods/clara_Fun.R") # fun to find optimal clara cluster  model 
+sample_tb <- read.csv("data/sample_descs.csv") # sample data with var desc
+load("data/PCA_Model.rds") # PCA model 10 dims
+load("data/acc_tab.rds") # nnet pred acc
+
+##-- remove dups mobile phone number by taking customer last tarns 
+deliq_dt %>%
+  mutate(pdate = as.Date(pdate)) %>%
+  group_by(msisdn) %>%
+  mutate(max_pDate = max(pdate)) %>%
+  mutate(max_amnt_loans90 = max(amnt_loans90)) %>%
+  mutate(max_cnts_loans90 = max(cnt_loans90)) %>%
+  filter(pdate == max_pDate) %>%
+  filter(max_amnt_loans90 == max_amnt_loans90) %>%
+  mutate(cnt = n()) %>% # dup return conflicting target vars 
+  filter(cnt < 2) -> deliq_dt
+
+```
+
+#### Introduction
+
+<br>
+<br>
+
+An Indonesian micro-finance company entered into a partnership with a teleco provider to give clients access to micro loans which which can be used purchase mobile phone credit. Customers can take loan amounts of 5 or 10 rupiah and pay back 6 & 12 rupiah within 5 days of receiving the loans.   
+One year into the partnership the finance company wants more information about the teleco's clients so it contracts a data science consulting firm D^3.
+
+The client informs D^3 that they would like to segment the customers into meaningful risk profiles so they can tailor appropriate products for each cohort. 
+The business also wants an interactive prediction App which can predict new client's risk profile and exisiting clients to see there risk profile chnages over time. 
+
+D^3 has defined the business problems into 2 questions. This allows to data scientists brainstorm what outputs will b require to help solve these business problems.  
+
+<b> Q1: </b> <i> Can clients be clustered into meaningful risk profiles using their credity history? </i> 
+
+Output: Create homogeneous cohorts with similar customer characteristics and different risk profiles. 
+
+<b> Q2: </b> <i> Once customer cohorts have been established can new/exisiting customers be assigned to a chort based on their recent mobile phone usage data? </i> 
+
+Output: label new clients cohorts by providing a user friendly shing app which can ingest new client data and output the new labels into a dynamic table or export to csv.   
+
+<br>
+
+#### Exploratory data analysis
+
+<br>
+<br>
+
+D^3 generally follows the data workflow as set out in Hadley Wickham's book "R For Data Science", most of the data transformations, cleansing & visualisation will be done using the Tidyverse which makes the inputs and outputs within the R environment more readable, stable and robust over time.
+The modelling part of the workflow would need to expand outside of the Tidyverse and this is also typical for most projects.  
+
+<br>
+
+```{r workflow, echo=FALSE, message=FALSE, warning=FALSE, out.width="80%"}
+
+knitr::include_graphics("data/Data workflow.png", error = FALSE)
+```
+
+<br>
+
+#### Data
+
+<br>
+<br>
+
+The data provided by the Teleco contains 37 variables and over 200,000 observations. It a mixture of mobile phone usage rates, total amounts (Indonesian rupees), average/median/max across 30 and 90 days windows (see data sample table in appendix for more details). Each row represents a loan transaction, their duplicate mobile phone records so after cleasing those we are left with 186,250 observations. 
+
+The key target variable in this dataset is called "label" and it classifies customers who have or have not paid back their mobile phone loan credit within five day timeframe (1 == Yes, 0 == No).  
+
+Looking at this data a few things are very evident, first we have a bunch of count measures combined with quantitative statistics (sums, medians, maxs etc.).
+The methods used to produce the outputs stated on Q1 require variables have the same scales and that each variable be normally distributed.
+The next section will outline how the data was transformed to achieve these two underlying assumptions.
+
+<br>
+
+#### Log transformations
+
+<br>
+<br>
+
+Its clear for looking at the first facet chart visualising each variables distribution that they are certainly not normally distributed and have vastly different scales, to overcome this I applied a log transformation. 
+The results of this transformation can be seen the second chart. The scales look similar and the distributions are much more normally distributed. Clearly there also some outliers evident and the scales are still abit different but the next multivariant method called principal component analysis (PCA) will help us solve these issues.  
+
+<br>
+
+```{r log_trans, echo=FALSE, message=FALSE, warning=FALSE,}
+##-- log tranformationa of cont vars so perform cor, assoc & PCA analysis, mods expected data ~ ND
+deliq_dt %>%
+  ungroup() %>%
+  select(-cnt, -max_amnt_loans90, -max_cnts_loans90, -max_pDate) %>%
+  mutate(label = as.integer(label)) %>%
+  gather("var", "value", daily_decr30:payback90) %>%
+  mutate(value = if_else(value < 0,  -log(abs(value)+1),
+                         log(value+1))) %>%
+  spread(var,value) -> deliq_dt_logs
+
+
+##-- visualise distrn before after log trans 
+deliq_dt %>%
+  select(msisdn, aon, daily_decr30, rental90, last_rech_amt_ma, cnt_ma_rech30) %>%
+  gather("var","value", -msisdn, -aon) %>%
+  ggplot(aes(y = value, fill = var)) + geom_boxplot() + facet_wrap(~var, scales = "free") + theme_classic() + theme(legend.position = "none")
+
+
+##-- after
+deliq_dt_logs %>%
+  select(msisdn, aon, daily_decr30, rental90, last_rech_amt_ma, cnt_ma_rech30) %>%
+  gather("var","value", -msisdn, -aon) %>%
+  ggplot(aes(y = value, fill = var)) + geom_boxplot() + facet_wrap(~var, scales = "free") + theme_classic() + theme(legend.position = "none")
+
+```
+
+<br>
+
+#### Removing variable multi-colinearity
+
+<br>
+<br>
+
+Another issue with this data that is not quite as evident when looking at individual distribution plot, is that many of the variables are highly correlated to one another. Typically, this is confirmed using statistical tests but just going off the data definitions alone makes it clear that this will be an issue as many of the measures are the same but with different time windows (30 & 90 days). 
+It is gernally considered best practise to remove this collinearity as it will be very hard to separate which variables are providing the most information value and it is also a basic underlying assumption of most statistical models that explantory varibale are not highly colinear. 
+
+D^3 decided to use the Multi-variant technique called principal component analysis which converts the explanatory variable (minus target variable) into a series of orthogonal dimensions and has some added bonuses. 
+This includes identifying which variables are adding not any real information value (enough variation to explain any variation in the target variable), it reduces the number of variables to 10 dimensions (rather than 37 variables) whilst returning 91.6% of the information value and finally the variable are cantered and scaled prior feeding them into the PCA model.
+
+The result of this process can be seen below, it can be seen in the top graph that many of the log transformations variables were highly correlated to one another, after the PCA process the 10 dimensions are orthogonal to one another, that is the paired correlations between the variables is approximately equal to zero. 
+
+
+##### Correlation martix of log variables
+```{r log_cor, echo=FALSE, message=FALSE, warning=FALSE}
+
+##-- selec cont vars
+deliq_dt_logs %>%
+  select(-label:-pdate, -aon, -cnt_da_rech30, -last_rech_date_da, -fr_da_rech30, -fr_da_rech90, -fr_ma_rech30, -fr_ma_rech90) -> cont_vars
+
+
+##-- cor vars dataset > 0.5 abs cor  
+##-- correlations pairs between all questions
+corrplot::corrplot(cor(cont_vars)) # cor with dim and QAs
+```
+
+<br>
+
+##### Correlation martix of PCA dimensions
+```{r PCA_cor, echo=FALSE, message=FALSE, warning=FALSE,}
+
+##-- fit PCa model 
+#PCA_Model <- PCA(cont_vars, graph = FALSE, ncp = 10)
+
+##-- cor plaots of var cor with each and var conts within each dim
+corrplot::corrplot(cor(PCA_Model$ind$coord)) # cor with dim and QAs
+```
+
+<br>
+
+#### Cluster PCA dimensions into meaningful risk profiles
+
+<br>
+<br>
+
+Cluster modelling is a process of adding meaningful labels to data (unsupervised learning) so observations can be paired other observations with similar charactertics. 
+In this case clients have been grouped together based on data usage, total loans taken, median data usage etc. 
+
+The below table illustrates how a well thought data transformations and using the latest cluster models can create distinctive cohorts with significant differences in the proportion of credit paid-on-time (remembering that the target variable was not included in the PCA and therefore not the cluster model). 
+96% of cluster 1 client paid their credit on time and that almost half of the teleco's clients feel into this cluster compared to 85% in cluster 2 and 54% in cluster 3.
+Just based of this information alone the finance company can tailor interest rates, credit limit or new offering based on a client's cluster. 
+
+It would be nice to add some more intuitive labels that just cluster 1 to 3 which have xyz probability of repaying loans. Looking at the histogram of 3 of the most important explanatory variables placed in the PCA model it become clear what distinguishes each cohort. 
+Cluster 1 take out far larger loan amounts (amnt_laon_90), much bigger phone/data recharges amounts (cnt_ma_rech90) & median recharge amounts (medianamnt_ma_rech90). The same can be said comparing Cluster 2 to 3 as which is clear when you notive the different scales acros the x axis (reversed log transformaion to return proper scale).   
+
+So each cohort label could be cahnged to cluster 1 == "High value customers", cluster 2 == "Moderate value customers", cluster 3 == "Low value or new customers".      
+
+This is a big step forward for the finance company, we can now attach intuitive labels to each client loan tranction with the knowledge of the significant differences between the proportions each client cohort repaying the lines of credit on time.  
+
+<br>
+
+###### Summary stats grouped by cluster
+```{r prob_tb, echo=FALSE, message=FALSE, warning=FALSE}
+##-- clara cluster model labell PCA co ord obs
+##-- go with the first 10 dims contains 90% all the varation
+PCA_cluster_dt <- data.frame(PCA_Model$ind$coord)
+
+
+##-- label cluserts
+cluster_labels <-  clara_Loop_fun(PCA_cluster_dt, K = 3)
+
+##-- add ccluster labels to original dataset
+deliq_dt_logs %>%
+    mutate(clustering = cluster_labels$clustering) -> deliq_dt_logs
+
+##-- cbind PCA data to the logs dataset feed into the glm model
+deliq_dt_logs <- cbind(PCA_cluster_dt, deliq_dt_logs)
+
+
+##-- visual the distrn of 3 import vars with diff coords (PCA top 6 chart)
+deliq_dt_logs %>%
+  group_by(clustering) %>%
+  summarise(proportion_credit_repaid = mean(label)*100,
+            total_clients = n(),
+            percentage_total_clients = (n()/nrow(deliq_dt_logs))*100) %>%
+  mutate(proportion_credit_repaid = round(proportion_credit_repaid,0)) %>%
+  mutate(total_clients = round(total_clients,0)) %>%
+  mutate(percentage_total_clients = round(percentage_total_clients,0)) -> prob_stats
+
+
+knitr::kable(prob_stats)
+```
+
+<br>
+
+###### Histogram of 3 important variables startied by cluster 
+```{r clustr_pts, echo=FALSE, message=FALSE, warning=FALSE, width.out = "100%"}
+
+##-- summarise mean,sd all var include in the, desc the 3 distrn clusters  
+deliq_dt_logs %>%
+  select(clustering,  medianamnt_ma_rech90, cnt_ma_rech90, amnt_loans90) %>%
+  gather("var", "value", -clustering) %>%
+  ggplot(aes(x = exp(value), fill = as.factor(clustering))) + geom_histogram(colour = "black") + facet_wrap(~var + clustering, scale = "free") +
+  theme(legend.position = "none", panel.background = element_rect(fill = "white", colour = "grey50")) + labs(x = "Values", y = "Counts")
+```
+
+<br>
+
+#### Prediction Apps
+
+<br>
+<br>
+
+The outputs stated in Q2 requires a user friendly Shiny app so these informative client clusters can easily be applied to a new batch’s of loan transaction data. 
+
+D^3 decides to use a neural networks model (nnet) because it typically does a great job of predicting multi-categorical response variables. 
+The below table illustrates the prediction accuracy of the nnet model. A 10% random sample was left out of the prediction model for cross validation purposes and the model only misclassifed 1 observations. 
+
+That great accurancy but not surprises given the effort put in to create the 3 very distinction customer cohorts, to reproduce this result over time though the data would have to be cleaned, transformed and placed into a PCA model. The cluster model can it used again of course in running a more memory expansive workflow is not an issue (in terms of runtimes rather than data object sizes). 
+ 
+<br>
+
+```{r nnet_pred, echo=FALSE, message=FALSE, warning=FALSE}
+
+acc_tab
+
+```
+  
+
+<br>
+<br>
+  
+### Appendix
+
+<br>
+
+#### Sample of Teleco data with descriptions 
+```{r data, echo=FALSE, message=FALSE, warning=FALSE}
+
+knitr::kable(sample_tb)
+```
+
