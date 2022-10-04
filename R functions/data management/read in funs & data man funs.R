@@ -16,6 +16,25 @@ fin_data
 }
 
 
+load_xl_files_in_folder <- function(file_path) {
+  ##-- read in all csvs files within a folder
+  
+  library(data.table)
+  library(magrittr)
+  library(tidyverse)
+  library(readxl)
+  
+  filenames = list.files(path = file_path,   pattern="*.xlsx",  full.names = TRUE)
+  filenames_concat = list.files(path = file_path,   pattern="*.xlsx",  full.names = FALSE)
+  
+  lapply(filenames, fread) %>%
+    set_names(filenames_concat) %>%
+    rbindlist(idcol = "origin") -> fin_data
+  fin_data
+  
+}
+
+
 ##-- exclude obs not in vector 
 `%notin%` <- Negate(`%in%`)
 
