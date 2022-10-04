@@ -1,0 +1,21 @@
+
+#read CSV file
+RTW <- read.csv("C:/Users/hewia1/Desktop/RTW.csv")
+
+#review object properties 
+str(RTW)
+
+#create a time series a var in the above dataset
+Weekly_ts <- ts(RTW$Weekly,start = c(2007, 4),frequency=12)
+
+#plot decomposition of ts
+plot(stl(Weekly_ts, "per")),main="Decompostion of Weekly Claims Per Month",col="
+
+
+## MBS visuals
+
+# noclassifed payments  - removed the last 3 months due to time lags
+noclasspay <- ts(Dataset$Payable[1:60],start=c(2012,6),frequency=12)
+
+#plot stl function - decomposing ts into t,s,rand.
+plot(stl(noclasspay, "per"),col="red",main="Decompostion of Non MBS Classified Payments Jul-12 to Jun-17")

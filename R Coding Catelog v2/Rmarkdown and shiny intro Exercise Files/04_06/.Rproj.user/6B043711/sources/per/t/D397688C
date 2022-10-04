@@ -1,0 +1,22 @@
+{
+    "collab_server" : "",
+    "contents" : "",
+    "created" : 1610611285957.000,
+    "dirty" : false,
+    "encoding" : "UTF-8",
+    "folds" : "",
+    "hash" : "3079055665",
+    "id" : "D397688C",
+    "lastKnownWriteTime" : 1457563894,
+    "last_content_update" : 1457563894,
+    "path" : "~/Desktop/R Coding Catelog/Rmarkdown and shiny intro Exercise Files/04_06/04_06_sidebarPanel.Rmd",
+    "project_path" : "04_06_sidebarPanel.Rmd",
+    "properties" : {
+        "cursorPosition" : "34,21",
+        "scrollLine" : "26"
+    },
+    "relative_order" : 1,
+    "source_on_save" : false,
+    "source_window" : "",
+    "type" : "r_markdown"
+}

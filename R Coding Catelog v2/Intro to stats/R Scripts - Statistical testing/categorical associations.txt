@@ -1,0 +1,270 @@
+
+Intro to Stats
+
+Search this site
+CONTENTS
+R BOOTCAMP
+MYDESKTOP
+DATA REPOSITORY
+CLASS WORKSHEETS
+GOOGLE+ COMMUNITY
+FEEDBACK
+Module 8: Categorical Associations
+
+CONTENTS
+1 Module 8: Categorical Associations
+1.1 Overview and Learning Objectives
+1.2 Video
+1.3 Chi-square Goodness of Fit Test
+1.3.1 M&Ms Data
+1.3.2 Chi-square Goodness of Fit Test using R
+1.3.3 Example Write-up
+1.3.4 Limitations
+1.4 Chi-square Test of Association
+1.4.1 Example Write-up
+Overview and Learning Objectives
+
+Statistical investigations often explore the distribution of categorical variables or explore the associations between categorical variables. This module introduces hypothesis testing for categorical variables based on the Chi-square distribution. The learning objectives associated with this module are: 
+Determine when a Chi-square goodness of fit test or Chi-square test of association may be applied to categorical data.
+Apply and interpret the Chi-square goodness of fit test.
+Apply and interpret the Chi-square test of association.
+Use technology to compute a Chi-square goodness of fit test and Chi-square test of association.
+Interpret a Chi-square goodness of fit test and Chi-square test of association. 
+Video
+
+CHI-SQUARE EXAMPLE
+
+Chi-square Goodness of Fit Test
+
+Categorical data are all around us. Gender, car make, food type, blood type, and hair colour are a few examples. Continuous data is also often converted to categorical or ordinal bands (e.g. age bands, weight bands, or income bands) to simplify analysis and presentation. In this module, we will introduce the Chi-square goodness of fit test and Chi-square test of association as an introduction to Hypothesis testing with categorical variables.
+M&Ms Data
+
+Milk chocolate M&M’s are supposedly manufactured to contain 24% blue, 13% brown, 16% green, 20% orange, 13% red, and 14% yellow M&M’s. Suppose someone, perhaps with a little too much time on their hands, purchases 48 packs of M&Ms and collates the following data:
+
+ Colour	 Blue	 Brown	 Green	 Orange	 Red	 Yellow	 Total
+ Observed	 481	 371	 483	 544	 372	 369	 2620
+ Proportion	 0.184  	 0.142	 0.184	 0.208	 0.142	 0.141	 
+ Expected	 629	 341	 419	 524	 341	 367	 
+ Population Proportion	 0.24	 0.13	 0.16	 0.20	 0.13	 0.14	 
+The observed row reports the count of each colour tallied from the 48 M&M packs. The proportion row reports the observed proportions. For example, 481 of the sampled M&Ms were blue. The proportion of observed blue M&Ms was therefore, 481/2620 = 0.184. The expected row reports the number of M&Ms that we would expect to be a particular colour assuming the manufacturer's claims are true, which are recorded in the Population Proportion row. For example, if M&Ms are manufactured with 24% blue, we would expect 2620*.24 = 629 M&Ms to be blue in our sample. We notice that blue M&Ms are under-represented (observed = 481), which means the other colours are all slightly over-represented. Does this mean the manufacturer is wrong?
+
+We need to be careful before jumping to this conclusion as we have used a sample. We need to perform hypothesis testing on the data to determine if this under-representation of blue M&Ms can be considered statistically significant. We can perform a Chi-square goodness of fit test to do just that.
+
+The Chi-square goodness of fit test is a hypothesis test in which we test if the count of our categorical observations "fit" the model of expected outcomes. In this example, the expected outcomes are based on the manufacturer's claimed proportions. 
+
+The Chi-square goodness of fit test has one major assumption. The minimum expected value for each cell must be at least 5. According to the table above, this assumption was clearly met. 
+
+The Chi-square goodness of fit test is based on the calculation of the Chi-square statistic:
+
+
+
+Let's calculate the Chi-square statistic, ?2:
+
+
+
+
+
+
+
+
+As you can see, the ?2 reflects the degree of discrepancy between the observed and expected values. If the observed values were exactly the expected values, the ?2 statistic would be 0. 
+
+We can now use this Chi-square statistic to test the following hypotheses at the standard 0.05 significance level:
+
+H0: The population distribution of M&M colours are 24% blue, 13% brown, 16% green, 20% orange, 13% red, and 14% yellow.
+
+HA: The population distribution of M&M colours are NOT 24% blue, 13% brown, 16% green, 20% orange, 13% red, and 14% yellow.
+
+We can use a ?2 critical value or p-value to decide whether to reject or fail to reject H0. 
+
+The critical value is found by looking up the value on a Chi-square distribution, with df = Number of categories - 1 = 6 - 1 = 5, that satisfies Pr(?2 > x) = .05.  Use the following app to find this value (If the app does not appear, your browser might be blocking it. Change your browser settings to enable the app or visit the app directly here). Select Chi-square as your Distribution, df = 5, Defined Shaded Area By: Probability, Area to shade: Right tail and enter .95 as the probability.
+
+
+
+You should be able to confirm Pr(?2 > 11.07) = .05, which is depicted in the following plot. 
+
+
+We can also use the R function qchisq().
+
+> qchisq(0.05, df = 5, lower.tail = FALSE)
+[1] 11.0705
+This tells us that ?2 values above 11.07 have less than 0.05 probability of occurring assuming H0 is true. As ?2 = 50.83, which is greater than the critical value 11.07, the decision was to reject H0. 
+
+An easier way to test H0 would be to calculate the p-value. The p-value can be calculated as Pr(?2 > 50.83). Using R:
+
+> pchisq(50.83, df = 5,lower.tail = FALSE)
+[1] 9.370786e-10
+This p-value is really small. We should round this to p < .001. This p-value is less than the standard significance level of 0.05. Therefore, we reject H0. Both the critical value and p-value approach come to the same conclusion. The p-value approach is the more informative. The results of the Chi-square goodness of fit test found a statistically significant departure from the proportion of M&M colours claimed to be produced by the manufacturer. 
+
+Chi-square Goodness of Fit Test using R
+
+Download the m&m.csv dataset from the Data Repository or create a data.frame() using the following code:
+
+> Col<-c("Blue","Brown","Green","Orange","Red","Yellow")
+> obs<-c(481,371,483,544,372,369)
+> mms<-data.frame(Colour=rep(Col,obs))
+You can summarise the data using the mosaic tally() function:
+
+> tally(~Colour, data = mms,margins = TRUE)
+
+  Blue  Brown  Green Orange    Red Yellow  Total 
+   481    371    483    544    372    369   2620 
+> tally(~Colour, data = mms,format="proportion")
+
+     Blue     Brown     Green    Orange       Red    Yellow 
+0.1835878 0.1416031 0.1843511 0.2076336 0.1419847 0.1408397
+Next, define your population proportions (ensure these sum to 1!)
+
+> pop_prop<-c(0.24,0.13,0.16,0.20,0.13,0.14)
+Now run the Chi-square goodness of fit test using the previous tally() and the xchisq.test() function:
+
+> xchisq.test(tally(~Colour, data = mms),p = pop_prop)
+
+ Chi-squared test for given probabilities
+
+data:  x
+X-squared = 50.835, df = 5, p-value = 9.348e-10
+
+  481      371      483      544      372      369   
+(628.80) (340.60) (419.20) (524.00) (340.60) (366.80)
+[34.741] [ 2.713] [ 9.710] [ 0.763] [ 2.895] [ 0.013]
+<-5.89>  < 1.65>  < 3.12>  < 0.87>  < 1.70>  < 0.11> 
+           
+key:
+ observed
+ (expected)
+ [contribution to X-squared]
+ <residual>
+Note that the p-value and ?2 value are slightly different to the previously worked example due to decimal rounding.
+
+Example Write-up
+
+A Chi-square goodness of fit test  was used to determine whether the distribution of M&M colours followed the manufacturer's purported distribution of 24% blue, 13% brown, 16% green, 20% orange, 13% red, and 14% yellow M&M’s. The test was statistically significant, X2 = 50.83, df = 5, p < .001. This suggests that the distribution of M&M colours do not follow the distribution proposed by the manufacturer. 
+
+Limitations
+
+While this investigation considered real data, it's important to note that there was an issue with the original sample. The investigator used 48 packs of M&Ms purchased from the same store. Could this be considered a random sample of all M&Ms? Probably not. It's possible that the packets purchased were biased. Perhaps on that particular day or time, the machines packaging the M&Ms might have been a little lax with the blue M&Ms. The investigator would need to follow-up with a proper random sample and repeat the Chi-square goodness of fit test before being confident in their conclusion.
+
+Chi-square Test of Association
+
+Consider the following real world scenario. An investigator gathers a random sample of 3,220 mothers with a diagnosis of breast cancer (cases) and 10,245 mothers without a history of breast cancer (controls). All mothers are then asked to report their age at the birth of their first child. The investigator presents this data in a 2 (rows) x 5 (columns) contingency table:
+
+Case-control Status	 	Mother’s Age at First Birth
+ 	 	<20	20-24	25-29	30-34	>=35	Total
+Case	Count	320	1206	1011	463	220	3220
+(Breast cancer)	% Within Group	9.9%	37.5%	31.4%	14.4%	6.8%	100.0%
+% Within Age	18.4%	21.4%	25.9%	29.8%	35.1%	23.9%
+Control	Count	1422	4432	2893	1092	406	10245
+(No breast cancer)	% Within Group	13.9%	43.3%	28.2%	10.7%	4.0%	100.0%
+% Within Age	81.6%	78.6%	74.1%	70.2%	64.9%	76.1%
+Total	Count	1742	5638	3904	1555	626	13465
+% Within Group	12.9%	41.9%	29.0%	11.5%	4.6%	100.0%
+ 	% Within Age	100%	100%	100%	100%	100%	100%
+The table presents the raw counts, % within group and % within age categories. The raw counts tell us how many mothers were observed. For example, there were 2,893 controls in the 25-29 age category and 463 cases aged 30 - 34 at the time of their first child. The % within group tells us what percentage of mothers within either the cases or controls that belonged to a certain age category. For example, 6.8% of cases were aged >= 35 years vs. 4.0% of controls. The % within age reports the percentage of cases or controls within the age category. For example, 70.2% of mothers in the 30-34 age category were controls. We can present the % within groups using a clustered barchart using R. The Breast Cancer.csv dataset is available from the Data Repository.
+
+> Breast.Cancer$Group <- factor(Breast.Cancer$Group, levels=c(1,2),
+                                  labels = c("Case","Control"))
+> Breast.Cancer$Age_Cat <- factor(Breast.Cancer$Age_Cat, levels = c(1,2,3,4,5),
+                                  labels = c("< 20","20 - 24","25 - 29","30 - 34", ">= 35"),
+                                  ordered=TRUE)
+> tally( ~ Age_Cat | Group, margins=TRUE,data=Breast.Cancer)
+         Group
+Age_Cat    Case Control
+  < 20      320    1422
+  20 - 24  1206    4432
+  25 - 29  1011    2893
+  30 - 34   463    1092
+  >= 35     220     406
+  Total    3220   10245
+> tally( ~ Age_Cat | Group, margins=TRUE, format = "proportion", data=Breast.Cancer)
+         Group
+Age_Cat         Case    Control
+  < 20    0.09937888 0.13879941
+  20 - 24 0.37453416 0.43260127
+  25 - 29 0.31397516 0.28238165
+  30 - 34 0.14378882 0.10658858
+  >= 35   0.06832298 0.03962909
+  Total   1.00000000 1.00000000
+> table <- tally( ~ Age_Cat | Group, format = "proportion", data=Breast.Cancer)
+> barplot(table,ylab="Proportion Within Group",
+          ylim=c(0,.6),legend=rownames(table),beside=TRUE,
+          args.legend=c(x = "top",horiz=TRUE,title="Age Category"),
+          xlab="Age Category", col=rainbow(5, start = .4, end = .7))
+> grid()
+
+
+
+If there was no association between age at first birth and breast cancer, the height of the bars (i.e. proportions) of cases and controls within each of the age bands would be the same. In the barchart above, this does not seem to be the case. The cases (i.e. mothers with breast cancer) are less likely to have their children under the age of 25 when compared to controls. This is an example of a categorical association. In other words, the probability of being a case "depends" on the age of the mother when they first give birth. What we need to determine with a Chi-square test of association is whether this relationship is statistically significant or whether it reflects natural sampling variability assuming breast cancer and age are independent (i.e. H0). The statistical hypotheses for this Chi-square test of association can be written as follows:
+
+H0: There is no association in the population between the categorical variables (independence)
+HA: There is an association in the population between the categorical variables (dependence)
+To test H0, the Chi-square statistic is calculated as:
+
+
+where Oij is the observed count in the ith row of the jth column and Eij is the expected count assuming no association. Eij is calculated as...
+
+
+
+where ri refers to the total count of the ith row and ci is the total count of the ith column. For example...
+
+
+and...
+
+
+
+
+Fortunately, we can get R to compute and report the rest using the xchisq.test() function:
+
+> xchisq.test(tally(~ Group | Age_Cat, data = Breast.Cancer))
+
+ Pearson's Chi-squared test
+
+data:  x
+X-squared = 130.34, df = 4, p-value < 2.2e-16
+
+   320     1206     1011      463      220  
+( 416.58) (1348.26) ( 933.60) ( 371.86) ( 149.70)
+[22.39]  [15.01]  [ 6.42]  [22.34]  [33.01] 
+<-4.73>  <-3.87>  < 2.53>  < 4.73>  < 5.75> 
+         
+  1422     4432     2893     1092      406  
+(1325.42) (4289.74) (2970.40) (1183.14) ( 476.30)
+[ 7.04]  [ 4.72]  [ 2.02]  [ 7.02]  [10.38] 
+< 2.65>  < 2.17>  <-1.42>  <-2.65>  <-3.22> 
+         
+key:
+ observed
+ (expected)
+ [contribution to X-squared]
+ <residual>
+The Chi-square test of association assumes that no more than 25% of the cells have expected counts below 5. This assumption is met in the above table as all expected counts (expected) are above 5. Using the complete list of expected counts, we can calculate the X2 statistic:
+
+
+This is better left to R. The Chi-square statistic represents the degree of discrepancy between the observed and expected counts under H0. This statistic follows a X2 distribution with
+
+
+therefore, df = (2-1)(5-1) = 4.
+
+Using a critical value approach to test H0, we need to compare the observed X2= 130.338 to a critical value, X2crit. The Chi-square distribution is a positive distribution, therefore, we perform a one-tailed hypothesis. The one-tailed critical value, X2crit, associated with a = 0.05 and df = 4 can be calculated using the following R formula:
+
+> qchisq(.95,df = 4)
+[1] 9.487729
+The critical value was found to be 9.49. We reject H0 when X2 > X2crit. As 130.338 > 9.49, H0 was rejected. 
+As R does not report the critical value, the easiest method to test H0 is to use the p-value. To calculate the p-value, we need to find the probability of observing the sample X2, or one more extreme, assuming there is no association in the population. We can use the pchisq() function: 
+
+> pchisq(130.34,df = 4,lower.tail = FALSE)
+[1] 3.293743e-27
+We find p < .001. The output from the xchisq.test() function above reports these values by default. However, you will notice that the p-value was reported to be p-value < 2.2e-16. This is a limitation of the printout. To confirm the p-value computed above, run the following code:
+
+> chi<-xchisq.test(tally(~ Group | Age_Cat, data = Breast.Cancer))
+> chi$p.value
+[1] 3.29696e-27
+This code saves the xchisq.test() as an object named "chi" and then reports the p.value saved with this object. This is a similar p-value derived using pchisq().
+
+As this p-value was less than the 0.05 level of significance, H0 was rejected. There was a statistically significant association between breast cancer and the age at which a mother first gives birth. 
+Example Write-up
+
+A Chi-square test of association was used to test for a statistically significant association between breast cancer status and the age of a mother at first birth. The results of the test found a statistically significant association, X2 = 130.34, p < .001. The results of this study suggest that women with breast cancer were more likely to give birth to their first child in older age categories when compared to controls.
+Return to top
+
+Recent Site Activity|Report Abuse|Print Page|Remove Access|Powered By Google Sites

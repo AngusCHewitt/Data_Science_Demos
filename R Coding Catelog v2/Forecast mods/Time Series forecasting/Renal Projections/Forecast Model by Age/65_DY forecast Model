@@ -1,0 +1,219 @@
+# forecast model using tscount
+## 65+ with Diabetes
+
+library(tscount)
+library(tidyverse)
+library(forecast)
+library(fpp)
+
+
+Dataset <- read.table("//internal.vic.gov.au/DHHS/HomeDirs6/ahew2812/Documents/Renal Model Data 2005-2017.csv",
+   header=TRUE, sep=",", na.strings="NA", dec=".", strip.white=TRUE)
+
+str(Dataset)
+
+regressors_renial <- ts(c(seq(1:13)),start = 2005, frequency = 1)
+
+--## patient > 65 with Diabetes
+Dataset %>%
+filter ( Age_Brackets == "65+" & Diabetes == "Y") -> Pop_65_DY
+
+# renial dialysis t.s. 
+acf(Pop_65_DY$Dialysis)
+pacf(Pop_65_DY$Dialysis)
+
+# diff 1 for pop 65+ with No Diabetes is stationary
+acf(diff(Pop_65_DY$Dialysis))
+
+# time and transplant xcof.'s
+xcof <- as.data.frame(cbind(Year=regressors_renial,Trans=Pop_65_DY$Transplants))
+
+ts_65_DY <- ts(data=Pop_65_DY$Dialysis,start = 2005, frequency = 1)
+
+Mod_65_DY1 <- tsglm(ts=ts_65_DY, model = list(past_obs = c(1,3),past_mean=10),
+ link = c("log"),xreg = xcof , distr = c("poisson")) 
+
+Mod_65_DY2 <- tsglm(ts=ts_65_DY, model = list(past_obs = c(1,3),past_mean=11),
+ link = c("log"),xreg = xcof , distr = c("poisson"))# best mod
+
+Mod_65_DY3 <- tsglm(ts=ts_65_DY, model = list(past_obs =c(1,3),past_mean=12),
+ link = c("log"),xreg = regressors_renial, distr = c("poisson"))
+
+Mod_65_DY4 <- tsglm(ts=ts_65_DY, model = list(past_obs = c(1,3),past_mean=13),
+ link = c("log"),xreg = regressors_renial, distr = c("poisson"))
+
+
+# visualise residuals
+checkresiduals(Mod_65_DY1)
+checkresiduals(Mod_65_DY2)# best mod 
+checkresiduals(Mod_65_DY3)
+checkresiduals(Mod_65_DY4) 
+
+
+# abs sum of residuals
+sum(abs(Mod_65_DY1$residuals)) 
+sum(abs(Mod_65_DY2$residuals)) # = 119.263
+sum(abs(Mod_65_DY3$residuals)) 
+sum(abs(Mod_65_DY4$residuals))
+
+
+##-- tscount: forecast model --##
+
+##-- testing trained model
+
+Dataset %>%
+filter ( Age_Brackets == "65+" & Diabetes == "Y" & Year < 2017) -> Pop_65_DY_tr
+
+
+# renial dialysis t.s. 
+acf(Pop_65_DY_tr$Dialysis)
+pacf(Pop_65_DY_tr$Dialysis)
+
+# diff 1 for pop 65+ with No Diabetes is stationary
+acf(diff(Pop_65_DY_tr$Dialysis))
+
+ts_65_DY_tr <- ts(data=Pop_65_DY_tr$Dialysis,start = 2005, frequency = 1)
+
+# x cof's
+regressors_renial_tr <- ts(c(seq(1:12)),start = 2005, frequency = 1)
+nxcof <- as.data.frame(cbind(Year=regressors_renial_tr,Trans=Pop_65_DY_tr$Transplants))
+
+# testing mods
+Mod_65_DY1 <- tsglm(ts=ts_65_DY_tr, model = list(past_obs = c(1,3),past_mean=11),
+ link = c("log"),xreg = nxcof , distr = c("poisson")) # best mod
+
+Mod_65_DY2 <- tsglm(ts=ts_65_DY_tr, model = list(past_obs = c(1,3),past_mean=11),
+ link = c("log"),xreg =nxcof , distr = c("poisson")) 
+
+pre_mod1 <- predict(Mod_65_DY1,n.ahead=1,newxreg=xcof[13,])
+
+((ts_65_DY[13] - pre_mod1$median[1])/ts_65_DY[13])*100 # error = -1.17%  # best mod
+
+
+pre_mod2 <- predict(Mod_65_DY2,n.ahead=1,newxreg=xcof[13,])
+
+((ts_65_DY[13] - pre_mod2$median[1])/ts_65_DY[13])*100 # error = -3.22% 
+
+# visualise residuals
+checkresiduals(Mod_65_DY1)# best mod
+acf(Mod_65_DY1$residuals)# best mod
+checkresiduals(Mod_65_DY2 ) 
+
+
+##-- Comparison models: Stocastic and Deterministic mods --##
+
+
+trend <- seq_along(ts_65_DY_tr) # number of years in t.s.  
+(fit1 <- auto.arima(ts_65_DY_tr, d=0, xreg=trend )) # fit deterministic lin mod
+
+(fit2 <- auto.arima(ts_65_DY_tr, d=1)) # fit stoc. mod
+
+sum(abs(fit1 $residuals)) # = 129.11 
+
+# visualise residuals
+checkresiduals(fit1 ) 
+checkresiduals(fit2 )
+
+# forecast 10 steps ahead
+mod3 <- forecast(fit1 ,xreg = cbind(trend = length(trend ) + 1:10))
+
+# training model
+mod4 <- forecast(fit2 , h=1)
+
+training_ds <- as.data.frame(mod4)
+
+write(training_ds ,file="Training_65DY.csv")
+
+?write()
+
+((ts_65_DY[13] - mod3$mean[1])/ts_65_DY[13])*100 # error = -3.05% 
+((ts_65_DY[13] - mod4$mean[1])/ts_65_DY[13])*100 # error = -1.98% # better mod
+
+# visualise residuals
+checkresiduals(mod4  )# best mod
+acf(mod4$residuals)# best mod
+checkresiduals(Mod_65_DY2 ) 
+
+# x cof for test mod
+nxcof <- xcof[1:12,] 
+
+trend <- seq_along(ts_65_DY_tr) # number of years in t.s.  
+(fit3 <- auto.arima(ts_65_DY_tr, d=0, xreg=nxcof )) # fit deterministic lin mod
+
+mod5 <- forecast(fit3 ,xreg = xcof[13,],h=1)
+((ts_65_DY[13] - mod5$mean[1])/ts_65_DY[13])*100 # error = -4.28%
+
+accuracy(mod3)
+accuracy(mod4) 
+accuracy(mod5)
+
+
+
+##-- Forecast Next 10 years using best mod --##
+
+# trend (years)
+nxcof <- as.data.frame(cbind(Year=regressors_renial))
+
+# best mod
+Mod_65_DN1 <- tsglm(ts=ts_65_DY, model = list(past_obs = 1,past_mean=6),
+ link = c("log"),xreg = xcof , distr = c("poisson"))
+
+# 13 years into the future
+nxcof <- as.data.frame(cbind(Year=14:23))
+
+(final_fit2 <- auto.arima(ts_65_DY, d=1)) # fit stoc. mod
+
+# best mod 10 year dialysis prediction 
+pred_mod1 <- forecast(final_fit2 ,h=10)
+
+
+##-- Forecast Next 10 years using best mod with tranplants --##
+
+#-- Project renal transplants
+
+str(Dataset)
+
+# renial dialysis t.s. 
+acf(Pop_65_DY$Transplants)
+pacf(Pop_65_DY$Transplants)
+
+# diff 1 for pop 65+ with No Diabetes is stationary
+acf(diff(Pop_65_DY$Transplants))
+
+trend <- seq_along(Pop_65_DY$Transplants) # number of years in t.s.  
+# fit ARIMA mod for people living with tranplants 
+(fit1 <- auto.arima(Pop_65_DY$Transplants, d=0, xreg=trend )) # fit deterministic lin mod
+
+# visualise residuals
+checkresiduals(fit1 )# best mod
+acf(fit1 $residuals)# best mod
+
+# transplant model for 65+ with Diabetes
+Mod_65_DY1_transplants <- tsglm(ts=Pop_65_DY$Transplants, model = list(past_obs = c(1,3),past_mean=9),
+ link = c("log"),xreg = trend , distr = c("poisson")) # best mod based on residuals
+
+# visualise residuals
+checkresiduals(Mod_65_DY1_transplants)# best mod
+acf(Mod_65_DY1_transplants$residuals)# best mod
+
+# abs sum of residuals
+sum(abs(Mod_65_DY1_transplants$residuals))  # = 36.01
+sum(abs(fit1 $residuals))
+
+# 13 years into the future
+new_trend <- as.data.frame(cbind(Year=14:23))
+
+# predict number transplants for 65+
+tranplant_mod1 <- predict(Mod_65_DY1_transplants,n.ahead=10,newxreg=new_trend)
+
+# Future Trendline & Transplants
+forecasted_trans <- cbind(Year=new_trend,Trans=tranplant_mod1$median)
+
+#-- Forecast nuumber of Dialysis patients based on no. transplants and time
+tranplant_mod1 <- predict(Mod_65_DY2,n.ahead=10,newxreg=forecasted_trans)
+
+# forecast expected dialysis and 95% intervals
+ts_data <- cbind(Forecast=tranplant_mod1$median,intervals=tranplant_mod1$interval)
+
+
+

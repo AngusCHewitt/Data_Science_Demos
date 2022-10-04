@@ -1,0 +1,62 @@
+# forecasting a linear process - stocastic or deterministic linear methods
+
+library(forecast)
+library(fpp) # forecast datasets
+library(ggplot2)
+
+# total annual visitors to Aust.
+plot(austa)
+str(austa) 
+length(austa) # count no. elements in a vector
+
+trend <- seq_along(austa) # number of years in t.s.  
+(fit1 <- auto.arima(austa, d=0, xreg=trend)) # fit deterministic lin mod
+
+(fit2 <- auto.arima(austa, d=1)) # fit stoc. mod
+
+# error stats
+accuracy(fit1)
+accuracy(fit2)
+
+# visualise residuals
+checkresiduals(fit1)
+checkresiduals(fit2)
+
+# deterministic
+fc1 <- forecast(fit1,
+  xreg = cbind(trend = length(austa) + 1:10))
+
+# stocastic
+fc2 <- forecast(fit2, h=10)
+
+
+# plot forecasted t.s.
+autoplot(austa) +
+  autolayer(fc2, series="Stochastic trend") +
+  autolayer(fc1, series="Deterministic trend") +
+  ggtitle("Forecasts from trend models") +
+  xlab("Year") + ylab("Visitors to Australia (millions)") +
+  guides(colour=guide_legend(title="Forecast"))
+
+#-- train and test model --#
+
+train_trend = 1:21
+
+trend <- seq_along(austa) # number of years in t.s.  
+(fit3 <- auto.arima(austa[1:21], d=0, xreg=train_trend)) # fit deterministic lin mod
+
+(fit4 <- auto.arima(austa[1:21], d=1)) # fit stoc. mod
+
+# forecast 10 steps ahead
+mod3 <- forecast(fit3 ,xreg = cbind(trend = length(train_trend) + 1:10))
+
+mod4 <- forecast(fit4 , h=10)
+
+accuracy(mod3,austa[22:31]) # error stats for test and training model
+accuracy(mod4,austa[22:31])
+
+# visualise residuals
+checkresiduals(fit3)
+checkresiduals(fit4)
+
+

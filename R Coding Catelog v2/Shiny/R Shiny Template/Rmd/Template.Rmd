@@ -1,0 +1,100 @@
+---
+title: "VIC RMarkdown Template"
+subtitle: "An optional longer subtitle describing the contents of the document."
+author:
+  - name: Logan Wu^[Department of Health, logan.wu@health.vic.gov.au]
+date: "dd/mm/yyyy"
+output:
+  html_document:
+    template: vicdh.html
+    css: vicdh.css
+    code_folding: show
+    toc: yes
+    toc_float:
+      collapsed: no
+toc-title: "On this page"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Source
+
+The source is available in the [dhhs-crt DevOps](https://dev.azure.com/dhhs-crt/ANALYTICS%20DIME%20ICCOM/_git/R%20Shiny%20Template). If you can't access the repo, ask to be added to the **dhhs-crt** organisation or for someone to export a `.zip` archive.
+
+### Resources
+
+This is a modified version of the default template that uses the Vic font, logo, and navbar.
+
+Place the required files in the same directory as your `.Rmd` document:
+
+- `vicdh.html`
+- `vicdh.css`
+- `DH Logo White.svg`
+- `fonts/*`
+
+### Options
+
+Specify these options in the header YAML:
+
+```{yaml}
+output:
+  html_document:
+    template: vicdh.html
+    css: vicdh.css
+```
+
+
+#### Other
+
+Other options available in the default RMarkdown template still work, such as:
+
+```{yaml}
+title: "VIC RMarkdown Template"
+subtitle: "An optional longer subtitle describing the contents of the document."
+author:
+  - name: "Namey McHeader"
+    affiliation: "Department of Health"
+    email: firstname.lastname@health.vic.gov.au
+  - name: Namey McFootnote^[Department of Health, firstname.lastname@health.vic.gov.au]
+date: "dd/mm/yyyy"
+output:
+  html_document:
+    template: vicdh.html
+    css: vicdh.css
+    code_folding: show
+    toc: yes
+    toc_float:
+      collapsed: no
+toc-title: "On this page"
+```
+
+## Extra styling {.tabset .tabset-pills}
+
+The template contains some extra styling for Leaflet and DataTable (DT styling also apply to some other tables).
+
+### Leaflet
+
+```{r}
+library(leaflet)
+leaflet(width = "100%",
+        options=leafletOptions(zoomControl=F)) %>%
+  addProviderTiles(providers$CartoDB.Positron) %>%
+  addMarkers(lng=174.768, lat=-36.852, popup="The birthplace of R", group="Markers") %>%
+  addLayersControl(overlayGroups = "Markers",
+                       position = "topleft",
+                       options = list(collapsed=F))
+```
+
+### DataTable
+
+```{r}
+library(DT)
+datatable(mtcars, style="bootstrap",
+          options = list(scrollX = "auto"))
+```
+
+## Contact
+
+Contact the Analytics team / Logan Wu (logan.wu@health.vic.gov.au) with any questions.

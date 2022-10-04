@@ -1,0 +1,279 @@
+
+Intro to Stats
+
+Search this site
+CONTENTS
+R BOOTCAMP
+MYDESKTOP
+DATA REPOSITORY
+CLASS WORKSHEETS
+GOOGLE+ COMMUNITY
+FEEDBACK
+Module 6: Estimating Uncertainty Confidently
+
+CONTENTS
+1 Module 6: Estimating Uncertainty Confidently
+1.1 Overview and Learning Objectives
+1.2 Pizza Data
+1.3 Point and Interval Estimation
+1.4 Confidence Interval Definition
+1.5 Confidence Interval Theory
+1.6 Factors Influencing Confidence Interval Width
+1.6.1 Sample Size
+1.6.2 Level of Confidence
+1.7 Confidence Intervals for a Mean:  Unknown Population Standard Deviation
+1.8 Confidence Intervals for Proportions
+1.9 Confidence Intervals for Rates
+Overview and Learning Objectives
+
+Our best estimate for a population parameter is often the sample estimate. However, due to sampling variability, the sample estimate is always uncertain. Module 6 will introduce the concept of confidence intervals as an interval estimate that expresses the degree of uncertainty associated with sample statistics. The learning objectives associated with this module are:
+Differentiate between a point and interval estimate.
+Define the concept of a confidence interval.
+Discuss the major factors that impact the width of a confidence interval.
+Use technology to calculate confidence intervals for common statistics including means, proportions and rates.
+Pizza Data
+
+This module will compare the mean diameter for pizzas made by Dominos and Eagle Boys. This is an issue close to many students' hearts.
+
+Eagle Boys claim their pizzas are larger than their main competitor, Dominos. The Pizza.csv dataset contains the diameters (cm) of 125 random pizzas from each company. The dataset is available from the data repository. You can read all about the data here. Here are the descriptive statistics and histogram comparing the pizza diameters (cm) of the two companies produced in R.
+
+>library(mosaic)
+> favstats(~Diameter | Store, data=Pizza)
+      Store   min    Q1 median    Q3   max     mean        sd   n missing
+1   Dominos 25.51 26.59  26.93 28.82 29.66 27.44208 1.1690721 125       0
+2 EagleBoys 26.58 28.76  29.08 29.51 31.06 29.17432 0.6263029 125       0
+> histogram(~Diameter | Store, data=Pizza,layout=c(1,2))
+
+
+As you can see, Eagle Boys tend to have a higher mean diameter than Dominos. However, here's the problem. These pizzas represent a random sample from each company. We learnt all about sampling error and sampling distributions in the previous module. Samples are not perfect representations of the population. There is always uncertainty. If we report the mean for each company, we need to acknowledge the degree of uncertainty in these estimates. That would allow us to deal more confidently with the estimates and help us draw better conclusions about what's likely to be happening in the population. 
+
+The following sections will explain the use of confidence intervals as a method for expressing uncertainty around sample estimates. We will first look at some theory and simulation results to build our conceptual understanding before coming back to the pizza data to apply what we have learnt.
+
+Point and Interval Estimation
+
+The point estimate of a sample statistic, such as the mean, median, proportion or rate are single, or point values. They are often our best estimate for a population parameter, but do not express the degree of uncertainty for an estimate associated with its sampling variability. Point estimates should be accompanied by additional information to assist with drawing inferences to the population.
+
+Interval estimation serves to overcome this limitation. The idea of interval estimation is to supplement the point estimate with an interval that reflects the degree of uncertainty associated with a statistic. The most common type of interval estimator is called the confidence interval, or CI for short. 
+
+Let's consider a typical confidence interval using a hypothetical example. Let's assume height is normally distributed in the population with a standard deviation of 7 cm (This is unrealistic as we often do not know the population SD, but let go with it for now). An investigator takes a random sample of 10 peoples' height (cm). Say the mean of the sample was found to be 176.5 cm. To calculate a confidence interval for the mean of a normally distributed variable with a known standard deviation, we use the following formula:
+
+
+
+We need to discuss the z critical value, Z1-(a/2), in the above formula. This value is obtained from the standard normal distribution. Recall, the standard normal distribution has the following properties:
+
+
+
+The a value refers to what is known as the significance level. Almost all studies will use a standard level of a = 0.05. The a value is based on the level of the confidence interval. A CI is defined as 100(1 - a) CI. If we use a = 0.05, this means we're going to calculate a 100(1 - 0.05) = 95% CI. 
+The z critical value in the confidence interval formula is found by looking up the z-value associated with the 1-a/2 = 1 - 0.05/2 = 1 - 0.025 = .975 percentile of the standard normal distribution. We might write:
+
+
+We dealt with solving a similar problem in Module 4. Fortunately, this is easy to solve in R. To solve the formula above we type the following into R:
+
+> qnorm(.975)
+[1] 1.959964
+Note, that if we don't specify the mean and standard deviation for qnorm(), the R function reverts to a standard normal distribution with mean = 0 and sd = 1.  We discover Pr(Z < 1.96) = .975. The following figure hows how z = 1.96 relates back to the 95% CI. We can see that Pr(-1.96 < z < 1.96) = .95 or 95%. This means that 0.025 probability sits in the upper and lower tail of the distribution. As you will discover later on, the critical value is required in the conference interval formula to ensure the confidence interval achieves the desired level of coverage, e.g. 95%. 
+
+
+
+Beauty! Now we can calculate the 95% CI for the sample mean:
+
+We would write x¯ = 176.5, 95% CI [172.16, 180.84]. The confidence interval captures a wide range of values for the mean height and reflects the high degree of uncertainty expected from a sample of n = 10. This interval is depicted as follows:
+
+Confidence Interval Definition
+
+Before we dig deeper, you need to have a definition of a CI in the back of your mind. When we refer to confidence in statistics, we need to understand very carefully what this means. In this course we will use a strict frequentist definition. Not all statistics instructors will be this stringent and in the past you may have been taught something different. However, for my course assessment, I expect you to understand and use this definition.
+
+100 (1- a)% CI, is an interval estimate for a population parameter, based on a given sample statistic, where if samples of a certain size n were repeatedly drawn from the population and a CI for each sample's statistic was calculated, 100(1-a)% of these intervals would capture the population parameter, whereas the other 100(a)% would not.
+
+Now with this strange and long-winded definition in mind, let's start digging deeper into the theory. 
+Confidence Interval Theory
+
+We will explore confidence interval theory using a simulation and visualisation. We will first make some assumptions about the population. Let's assume height is normally distributed with a mean of 175 and a standard deviation of 7:
+
+
+
+As investigators, we don't tend to know population parameters in advance, and hence the reason we need to gather a sample and estimate it. However, for the purpose of this lesson, we need to assume its value.
+
+Now imagine drawing 100 random samples of size 10 from the population. For each of the 100 samples, you calculate the sample mean and 95% CI. You can plot all these means and 95% CIs like in Plot 1 below. Plot 2 and 3 repeat the same procedure, each displaying the means and 95% CIs of 100 random samples of size 10. At the top of each plot, the percentage of CIs that miss capturing the population mean, µ = 175, are reported. Missed intervals are coloured red. For Plot 1, we see that 6% of the CIs missed µ = 175, for Plot 2, 8%, and for Plot 3, 3%. If we repeated this for many thousands of plots and samples, what do you think this missed percentage would average? If you guessed 5%, you're already on your way to understanding CIs. The 5% of CIs that will miss capturing the population mean is our a = 0.05.
+
+
+Think carefully about the plots above and now re-read the CI definition:
+
+100 (1- a)% CI, is an interval estimate for a population parameter, based on a given sample statistic, where if samples of a certain size n were repeatedly drawn from the population and a CI for each sample's statistic was calculated, 100(1-a)% of these intervals would capture the population parameter, whereas the other 100(a)% would not.
+CIs should now be starting to make a little more sense. Basically, CIs are constructed in a way that in the long run, a certain percentage (e.g. 95%) of CIs calculated by repeating the same random sampling procedure will capture a population parameter, for example µ = 175. 
+
+CIs can be calculated for a wide range of statistics using formulaic approaches. However, the methods vary depending on the type of statistic being estimated and the assumptions we make about the population from which the data are drawn. Later sections in this module explain calculating CIs for various situations and statistics.
+Factors Influencing Confidence Interval Width
+
+Sample Size
+
+Look at the formula for a CI for the mean of a normally distributed variable with a known standard deviation:
+
+
+You can see the standard error of the mean in the formula: 
+
+
+
+Therefore, it comes as no surprise that CIs share some of the same rules as sampling distributions. Consider the following plots. Note that the number of simulated samples have been increased to 1000 so we get better estimates of the "Missed" percentage. We know from the previous module that sample size shares an inverse relationship with SE. As N increases, SE decreases. Moving from Plot 1 to Plot 3, sample sizes are 10, 50 and100. What happens to the width of the CIs as sample size increases?
+
+
+We see a dramatic decrease in the width of the intervals. Why? Mathematically, as sample size increases, the SE in the CI formula decreases, meaning that the lower and upper bounds fall closer to the sample mean. 
+
+For example, if in the height example the investigator had used a sample size of 30, the confidence interval would become:
+
+
+
+and therefore, x¯ = 176.5, 95% CI [174.00, 179.00]. This 95% CI is narrower than the interval calculated for n = 10, 95% CI [172.16, 180.84]. Conceptually, larger random samples are better estimates of the population and therefore, we can be more certain in their estimates over the use of smaller samples. 
+
+Level of Confidence
+
+While the 95% CI is the most common, it is possible to use other levels of confidence. Let's compute a 90% and 99% confidence interval for the sample mean height when n = 10. This is depicted in the following plot. Plot 1 reports a 99% CI, Plot 2, 95% CI, and Plot 3, 90% CI. 
+
+
+As you can see, higher levels of confidence are associated with wider intervals. This makes sense. If you want to be more confident about capturing a population parameter, cast a wider interval!
+
+Now let's look at the formula.  We need to change the z critical value for the confidence interval formula:
+
+We will begin with the 90% CI. This CI width corresponds to a significance level of a = 0.1. We need to find Pr(Z < z) = 1-a/2 = 1 - 0.1/2 = 1 - 0.05 = .95. In R:
+
+> qnorm(.95)
+[1] 1.644854
+The z-value is found to be 1.64. Now completing the 90% CI equation:
+
+
+We calculate x¯ = 176.5, 90% CI [172.86, 180.14]. Now compare this 90% CI to the 95% CI [172.16, 180.84]. The 90% CI is narrower. Why? Because as we are less certain about the CI capturing the population parameter in the long run, the width of the confidence interval will reduce. Think of it like casting a smaller net to capture the population mean.
+
+For a 99% CI, we must change the z critical value again. This CI width corresponds to a significance level of a = 0.01. Therefore, we need to find Pr(Z < z) = 1 - a/2 = 1 - 0.01/2 = 1 - 0.005 = .995. In R:
+
+> qnorm(.995)
+[1] 2.575829
+The z-value is found to be 2.58. Next...
+
+
+The result is x¯ = 176.5, 99% CI [170.80, 182.20]. Comparing this to the 95% CI [172.16, 180.84], we note that the 99% CI is wider. As we are trying to be extra certain (99% of confidence interval will capture the population mean in the long run), we need to widen the interval. In other words, the 99% CI is casting a wider net to catch the population parameter. 
+
+Confidence Intervals for a Mean:  Unknown Population Standard Deviation
+
+
+In the previous examples, we have made an unrealistic assumption that the population standard deviation, s, is known for a normally distributed variable. This allows us to use the standard normal distribution to calculate the CIs. In real research, s is rarely known and must be estimated from the sample standard deviation, s. As we are estimating two parameters from the sample, the population mean, µ, and standard deviation, s, we need to take into account the extra uncertainty or error associated with s to ensure the expected coverage of the CI remains at the desired level, e.g. 95%. The family of t-distributions are used for this purpose. 
+The t-distribution has an extra parameter, called degrees of freedom, df, that can be altered to change the heaviness of the distribution's tails. Degrees of freedom for a t-distribution are typically calculated as:
+
+
+
+The following Shiny app compares the t-distribution for varying values of df to a standard normal distribution, N(0,1). Move the df slider from left to right to explore how the t-distribution changes based on df. The t-distribution looks very flat in comparison to a normal distribution when the df values are low. However, as df increases (i.e. sample size increases), the t-distribution will start to approximate a normal distribution. In fact, for very large sample sizes (approximately df > 30), there is very little practical difference between them. As df approaches infinity, the t-distribution will be a normal distribution. 
+
+T DISTRIBUTION VS. NORMAL DISTRIBUTION
+
+So let's look back to the Pizza data after a long detour. We will look at calculating the 95% CI for the Eagle Boys and Dominos pizza diameters.
+
+> favstats(~Diameter | Store, data=Pizza)
+      Store   min    Q1 median    Q3   max     mean        sd   n missing
+1   Dominos 25.51 26.59  26.93 28.82 29.66 27.44208 1.1690721 125       0
+2 EagleBoys 26.58 28.76  29.08 29.51 31.06 29.17432 0.6263029 125       0
+In this example, we don't know the population standard deviation, so we have to estimate it using the sample.  You might notice that the sample data did not appear normally distributed and consider whether the confidence interval formula used previously is appropriate. The answer to this question depends on the sample size. If the sample size was small (e.g. n < 30), the non-normality of the data would prevent us from applying a regular CI formula. However, thanks to the larger sample size (n = 125 for each company) and the CLT introduced in the previous module, the standard CI formula works quite well. We only need to adjust the formula slightly to take into account that we don't know the population standard deviation. 
+
+
+
+Notice the inclusion of tn-1,1-(a/2). Instead of looking this value up using a normal distribution, we need to use a different formula in R namely qt(). 
+
+> qt(0.975, df=125-1)
+[1] 1.97928
+Now, calculate the mean and 95% CI for Dominos:
+
+
+
+..and for Eagle Boys:
+
+
+
+ Store	 Mean	 SD	 n	 SE	 95% CI for Mean
+ Dominos	 27.44	 1.169	 125 	 0.105	 [27.23, 27.65]
+ Eagle Boys	 29.17	 0.626	 125	 0.056	 [29.06, 29.28]
+
+As the population standard deviation is rarely known, we should always default to using the t-distribution and t critical values to calculate interval estimates for sample means. Only use a z critical value if the population standard deviation is given. 
+Of course, there are always some nice functions in R to give us a short cut to these CIs. We use a combination of the confint() and t.test() functions.
+
+> confint(t.test( ~ Diameter, data = subset(Pizza,subset=(Store=="Dominos"))))
+mean of x     lower     upper     level 
+ 27.44208  27.23512  27.64904   0.95000 
+
+> confint(t.test( ~ Diameter, data = subset(Pizza,subset=(Store=="EagleBoys"))))
+mean of x     lower     upper     level 
+ 29.17432  29.06344  29.28520   0.95000 
+If you want to change the confidence level to 99%:
+
+> confint(t.test( ~ Diameter, data = subset(Pizza,subset=(Store=="Dominos")),
+                conf.level=0.99))
+mean of x     lower     upper     level 
+ 27.44208  27.16853  27.71563   0.99000 
+
+> confint(t.test( ~ Diameter, data = subset(Pizza,subset=(Store=="EagleBoys")),
+                conf.level=0.99))
+mean of x     lower     upper     level 
+ 29.17432  29.02777  29.32087   0.99000 
+Visualising confidence intervals can be tricky. I recommend you display the confidence intervals overlaid upon the data. This ensures the viewer does not confuse the 95% CI as the range of the data. Here's some code that you can adapt to different situations. The visualisation makes use of the ggplot2 package.
+> install.packages("ggplot2")
+> library(ggplot2)
+
+> cis<-data.frame(Group = c("Dominos","EagleBoys"),
+                Means = c(27.44, 29.17),
+                LB = c(27.23, 29.06),
+                UB = c(27.65, 29.28)) 
+
+> p <- ggplot(Pizza, aes(Store, y = Diameter)) +
+  geom_dotplot(binaxis = "y", stackdir = "center",alpha = 0.3) +
+  layer(data = cis,mapping = aes(x = Group, y = Means), 
+        geom = "point", size = 4, color = "red") +
+  layer(data = cis,mapping = aes(x = Group, y = Means, ymin = LB, ymax = UB), 
+        geom = "errorbar", size = 1, color = "red", width = 0.2)
+> p
+
+Based on the 95% CIs for the mean pizza diameters of the competing stores, I think we can be very confident that Eagle Boy's pizzas tend to have a wider mean diameter. 
+Confidence Intervals for Proportions
+
+Interval estimates for other statistics can also be calculated using the following formulas. However, be warned. You can only guarantee the appropriate confidence interval converge will be met if the stated assumptions are satisfied. These methods are referred to as approximations. When approximations cannot be used, we must look to exact methods. Fortunately, R has you covered for both.
+
+Interval estimates for proportions are based on a normal approximation to the binomial distribution. If np(1 - p) = 5 , we can approximate a CI using:
+
+
+
+For example, suppose a researcher randomly selects 300 people from the population and finds that 2% (x = 6) have cancer. We confirm, np(1 - p) = 300*.02*.98 = 5.88 = 5. Therefore, we can proceed with the normal approximated CI. We will use the standard 95% CI. 
+
+
+
+We calculate the prevalence of cancer to be 0.02, 95% CI [.004, .036].
+
+In R, we can use the binom.conf.int() command from the epitools package to quickly calculate the 95% CI.
+
+> install.packages("epitools")
+> library(epitools)
+> binom.approx(6, 300, conf.level = 0.95)
+  x   n proportion     lower     upper conf.level
+1 6 300       0.02 0.0041578 0.0358422       0.95
+What do you do if np(1 - p) < 5? For example, say the above example was changed so n = 20, p = .3 (x=6) and 1 - p = .7, np(1 - p) = 20*.3*.70 = 4.2. Therefore, the normal approximation does not apply. We can use the binom.approx() function to deal with this situation.
+
+> binom.exact(6, 20, conf.level = 0.95)
+  x  n proportion     lower     upper conf.level
+1 6 20        0.3 0.1189316 0.5427892       0.95
+Confidence Intervals for Rates
+
+Confidence intervals for rates following a Poisson distribution can be readily obtained using the pois.conf.int() function, which is also part of the epitools package. For example, we can confirm from the output below that the 95% CI for ? = 56 is [42.30, 72.72].
+
+> pois.exact(56, pt = 1, conf.level = 0.95)
+   x pt rate    lower    upper conf.level
+1 56  1   56 42.30181 72.72068       0.95
+When ? > 100, we can use the following normal approximation:
+
+
+Suppose a sample's point estimate is ? = 145. A normal approximated 95% CI for ? is calculated by:
+
+
+
+Therefore, ? = 145, 95% CI [121.4, 168.6]. Alternatively, in R:
+
+> pois.approx(145, pt = 1, conf.level = 0.95)
+    x pt rate    lower    upper conf.level
+1 145  1  145 121.3989 168.6011       0.95
+Return to top
+
+Recent Site Activity|Report Abuse|Print Page|Remove Access|Powered By Google Sites

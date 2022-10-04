@@ -1,0 +1,42 @@
+library("tidyverse")
+
+wdi_data <- read_csv("data/wdi_data.csv")
+
+indicators <- read_csv("data/indicators.csv")
+
+function(input, output, session) {
+  
+  updateSelectInput(session,
+                    "select_country_with_manual_labels",
+                    choices = unique(wdi_data$country)
+  )
+  
+  updateSelectInput(session,
+                    "select_country_with_data_labels",
+                    choices = unique(wdi_data$country)
+  )
+  
+  output$chart_manual_labels <- renderPlot({
+    wdi_data %>%
+      filter(
+        country == input$select_country_with_manual_labels
+      ) %>%
+      filter(indicator == input$selected_indicator_labelled_manual) %>%
+      filter(!is.na(value)) %>%
+      ggplot(aes(x = year, y = value)) +
+      geom_path() +
+      labs(
+        title = paste(
+          input$selected_indicator_labelled_manual,
+          "in",
+          input$select_country_with_manual_labels
+        ),
+        subtitle = "Data source: WDI Package, see data/world-bank.R for details"
+      )
+  })
+  
+  output$chart_data_labels <- renderPlot({
+    
+    
+  })
+}

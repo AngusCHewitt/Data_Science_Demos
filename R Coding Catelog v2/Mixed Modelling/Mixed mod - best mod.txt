@@ -1,0 +1,87 @@
+s##-- testing sampling distrn ability to predict or represent out of sample results --##
+library(tidyverse)
+library(lme4)
+library(abind, pos=28)
+library(e1071, pos=29)
+
+
+# load dataset
+#setwd("/Users/angushewitt/Desktop/AFL Datasets/")
+setwd("//internal.vic.gov.au/DHHS/HomeDirs6/ahew2812/Documents/Downloads/AFL Datasets/")
+
+# use 25% of data to cross validate the model 
+load("AFL_Tabs_Model_DS.Rdata")
+
+# add unqiue row ID
+AFL_tabs_dt %>%
+mutate(ID_number = 1:nrow(AFL_tabs_dt)) -> AFL_tabs_dt
+
+# sample 25% of data
+set.seed(123)
+AFL_tabs_dt %>%
+  group_by(game_ID) %>%
+  nest() -> nest_game_level
+
+# model cross validation sample size
+sample_size <- round(nrow(nest_game_level) * .50)
+
+# keep 44 player of each game in the cross validated samples
+nest_game_level %>%
+  ungroup() %>%
+  sample_n(size = sample_size) %>%
+  unnest() %>%
+   dplyr::select(ID, First.name, Surname, game_ID,ID_number,  Career_Position, GameDay_Role, PCA_GS_Form, PCA_GS_Potential, Age_Categories, 
+           Height_Categories, HGS_Binary) -> Training_Data
+
+# edit not in data object function
+'%!in%' <- function(x,y)!('%in%'(x,y))
+
+##-- test dataset
+AFL_tabs_dt %>%
+  dplyr::filter(game_ID %!in% Training_Data$game_ID) %>%
+  dplyr::select(ID, First.name, Surname, game_ID,ID_number,   Career_Position, GameDay_Role, PCA_GS_Form, PCA_GS_Potential, Age_Categories, 
+                Height_Categories, HGS_Binary) -> Test_Dataset
+
+# rehsape test dataset to allow for comparision with a preiction mod
+Test_Dataset %>%
+  group_by(ID, First.name, Surname, game_ID,  Career_Position, GameDay_Role, HGS_Binary) %>%
+  summarise(total_count = n()) %>%
+  spread(key = HGS_Binary, value = total_count, fill = 0) %>%
+  mutate(prob_success = `1`/sum(`1`,`0`)) -> reshaped_Test_dt
+
+
+##-- glmer - Gameday form Rand Effect Fixed Intercept Career/GD_Role ** Best model **
+mixed_effects_3 <- glmer(HGS_Binary ~ Age_Categories + PCA_GS_Potential + PCA_GS_Form + (PCA_GS_Form|  Career_Position:GameDay_Role:Height_Categories)  ,
+                         data = Training_Data, family = binomial(link = "logit"), optimizer = "bobyqa", nAGQ = 0)
+
+summary(mixed_effects_3)
+mod_mixed_effects_3 <- predict(mixed_effects_3, newdata = Test_Dataset, type = "response")
+
+##-- join prediction to summarised dataset
+Test_Dataset %>% 
+  ungroup() %>%
+  mutate(predictions = mod_mixed_effects_3) %>%
+  group_by(ID, First.name, Surname, game_ID, Career_Position, GameDay_Role) %>%
+  summarise(pred_mean  = mean(predictions))  -> mod_mixed_effects_3_career_level
+
+# predictions residuals
+numSummary(abs(mod_mixed_effects_3_career_level$pred_mean - reshaped_Test_dt$prob_success), 
+           statistics=c("mean", "sd", "IQR", "quantiles"), quantiles=c(0,.25,.5,.75,1))
+
+# predictions when player is or is not HGS
+numSummary(abs(mod_mixed_effects_3_career_level$pred_mean), groups = as.factor(reshaped_Test_dt$`1`),
+           statistics=c("mean", "sd", "IQR", "quantiles"), quantiles=c(0,.25,.5,.75,1))
+
+# visualise mod errors
+hist(abs(mod_mixed_effects_3_career_level$pred_mean - reshaped_Test_dt$prob_success))
+
+
+## Review model prediction prob (odds for particular players)
+reshaped_Test_dt %>%
+ungroup() %>%
+mutate(predictions = round(mod_mixed_effects_3_career_level$pred_mean,4)) -> actual_v_predictions
+
+View(actual_v_predictions)
+
+
+##------------------------- Old Code ---------------------------------##

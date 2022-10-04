@@ -1,0 +1,25 @@
+{
+    "collab_server" : "",
+    "contents" : "",
+    "created" : 1557305915621.000,
+    "dirty" : false,
+    "encoding" : "UTF-8",
+    "folds" : "",
+    "hash" : "3491775747",
+    "id" : "3B64B794",
+    "lastKnownWriteTime" : 1557305918,
+    "last_content_update" : 1557305918649,
+    "path" : "~/Google Drive/VisibleData/clients-and-customers/05_present_in-progress/419610011_Lynda_R-&-Shiny_Essential-Skills-for-Building-Dashboards-and-Web-Apps/development/exercises/04_04/final-server.R",
+    "project_path" : "final-server.R",
+    "properties" : {
+        "cursorPosition" : "36,1",
+        "scrollLine" : "0"
+    },
+    "read_only" : false,
+    "read_only_alternatives" : [
+    ],
+    "relative_order" : 5,
+    "source_on_save" : false,
+    "source_window" : "",
+    "type" : "r_source"
+}

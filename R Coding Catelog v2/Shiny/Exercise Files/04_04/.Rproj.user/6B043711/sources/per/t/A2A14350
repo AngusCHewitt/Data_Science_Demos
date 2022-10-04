@@ -1,0 +1,22 @@
+{
+    "collab_server" : "",
+    "contents" : "",
+    "created" : 1610338177983.000,
+    "dirty" : false,
+    "encoding" : "UTF-8",
+    "folds" : "",
+    "hash" : "828548203",
+    "id" : "A2A14350",
+    "lastKnownWriteTime" : 1559014570,
+    "last_content_update" : 1559014570,
+    "path" : "~/Desktop/R Coding Catelog/Shiny App/Exercise Files/04_04/ui.R",
+    "project_path" : "ui.R",
+    "properties" : {
+        "cursorPosition" : "7,29",
+        "scrollLine" : "0"
+    },
+    "relative_order" : 2,
+    "source_on_save" : false,
+    "source_window" : "",
+    "type" : "r_source"
+}

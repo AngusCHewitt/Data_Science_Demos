@@ -1,0 +1,10 @@
+
+function(input, output, session){
+
+  output$curve_plot <- renderPlot({
+
+    curve(x^as.integer(input$exponent), from = -5, to = 5)
+    
+  })
+  
+}

@@ -1,0 +1,103 @@
+library(lme4)
+lmer( y ~ x + (1|randomGroup), data = myData) # rand intercept
+lmer( y ~ x + (randomSlope|randomGroup), data = myData) # rand slope
+
+( countinuousPredictor | randomEffectGroup)
+
+# Look at model outputs 
+
+summary( outLmer )
+
+tidy( outLmer )
+
+# Mixed effect model
+lmerModel <- lmer(mathgain ~ 
+                  
+sex + mathprep + mathknow + 
+                  
+(1|classid) + (1|schoolid), 
+                  
+data = studentData, na.action = "na.omit",
+                  
+REML = TRUE)
+
+
+summary(lmerModel)
+
+
+# Extract the fixed-effect coefficients
+
+fixef(out)
+
+
+# Extract the random-effect coefficients
+
+ranef(out)
+
+
+# Estimate the confidence intervals 
+
+confint(out)
+
+
+# Use the tidy function
+tidy(out)
+
+
+##-- glm model with a binomial error term linked to data
+##-- df est. differ, coefficient and z values are same
+# binary: y = 0 or 1
+glm( y ~ x, family = "binomial")
+
+# Wilkinson-Rogers: cbind(success, failure)
+glm( cbind(success, failure) ~ x, family = "binomial")
+
+# Weighted format: y = 0.3, weights = 10/ weight turn response into a prob disturb successes / total obs
+glm( y ~ x, weights = weights, family = "binomial")
+
+
+# EDA of binomial distn within data, look for trends, clusters, hierarchies, outliers
+# Plot the data using jittered points and the default stat_smooth
+ggplot(data = dfLong, aes(x = dose, y = mortality)) + 
+	geom_jitter(height = 0.05, width = 0.1) +
+	stat_smooth(fill = 'pink', color = 'red') 
+
+
+# Plot the data using jittered points and the the glm stat_smooth - plot bounds to 1 & 0
+ggplot(data = dfLong, aes(x = dose, y = mortality)) + 
+	geom_jitter(height = 0.05, width = 0.1) +
+	stat_smooth(method = "glm",  
+				method.args = list(family = "binomial"))
+
+# Run the code to see how to calculate odds ratios
+summary( modelOut) 
+x <- exp(fixef(modelOut))
+y <- exp(confint(modelOut))
+
+# Create the tidied output
+tidy(modelOut, conf.int = TRUE, exponentiate = TRUE)
+
+
+##-- glmer with poisson error term 
+# Load lmerTest
+library(lmerTest)
+
+# Age goes before year
+modelOut <- glmer(count ~ age + year + (year|county), family = "poisson",
+                  data = ILdata)
+
+# Extract out fixed effects
+fixef(modelOut)
+
+# Extract out random effects 
+ranef(modelOut)
+
+# Run code to see one method for plotting the data
+ggplot(data = ILdata2, aes(x = year, y = count, group = county)) +
+    geom_line() +
+    facet_grid(age ~ . ) +
+    stat_smooth( method = "glm",
+                method.args = list( family = "poisson"), se = FALSE,
+                alpha = 0.5) +
+    theme_minimal()
+

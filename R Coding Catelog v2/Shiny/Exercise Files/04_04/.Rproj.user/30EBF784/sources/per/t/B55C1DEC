@@ -1,0 +1,26 @@
+{
+    "collab_server" : "",
+    "contents" : "",
+    "created" : 1557302095074.000,
+    "dirty" : false,
+    "encoding" : "UTF-8",
+    "folds" : "",
+    "hash" : "3569951310",
+    "id" : "B55C1DEC",
+    "lastKnownWriteTime" : 1557302103,
+    "last_content_update" : 1557302103601,
+    "path" : "~/Google Drive/VisibleData/clients-and-customers/05_present_in-progress/419610011_Lynda_R-&-Shiny_Essential-Skills-for-Building-Dashboards-and-Web-Apps/development/exercises/04_04/delete-me_initial-ui.R",
+    "project_path" : "delete-me_initial-ui.R",
+    "properties" : {
+        "cursorPosition" : "15,16",
+        "scrollLine" : "0",
+        "tempName" : "Untitled1"
+    },
+    "read_only" : false,
+    "read_only_alternatives" : [
+    ],
+    "relative_order" : 3,
+    "source_on_save" : false,
+    "source_window" : "",
+    "type" : "r_source"
+}

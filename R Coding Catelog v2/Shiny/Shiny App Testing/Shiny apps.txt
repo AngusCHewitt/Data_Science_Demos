@@ -1,0 +1,160 @@
+Example choose theme - Datacamp
+
+(1) Add inputs, 
+  # Add a select input with choices Hello, Bonjour
+  selectInput("greeting_type", "Greetings", c("Hello", "Bonjour")),
+  # Add a text input: name
+  textInput("name", "Whats in a Name"),
+
+(2) Add outputs, 
+  # Add a text output: greeting
+  textOutput("greeting")
+
+(3) Update layout, and 
+
+(4) Update outputs.
+ output$greeting <- renderText({
+    paste(input$greeting_type, input$name, sep = ", ")
+  })
+
+Simple name text input and select input
+
+ui <- fluidPage(
+  
+  # Add a select input with choices Hello, Bonjour
+  selectInput("greeting_type", "Greetings", c("Hello", "Bonjour")),
+  # Add a text input: name
+  textInput("name", "Whats in a Name"),
+  # Add a text output: greeting
+  textOutput("greeting")
+  )
+
+server <- function(input, output, session) {
+  output$greeting <- renderText({
+    paste(input$greeting_type, input$name, sep = ", ")
+  })
+  
+}
+
+shinyApp(ui = ui, server = server)
+
+
+App 2: Popular Baby Names
+
+ui <- fluidPage(
+  # CODE BELOW: Build the UI layout keeping the
+  #   inputs in the sidebar, outputs on the right, title on the top
+  titlePanel("Most Popular Names"),
+  sidebarLayout(
+    sidebarPanel(
+      # CODE BELOW: Add an input to let the user select sex (M / F)
+      selectInput('sex', 'Select Sex', c("M","F")),
+      # CODE BELOW: Add a slider to let the user select a year (1880 to 2017)
+      sliderInput('year', 'Select Year', min = 1880, max = 2017, 2010:2017)
+    ),
+    mainPanel(
+     plotOutput('plot')
+    )
+  )
+)
+server <- function(input, output, session) {
+  output$plot <- renderPlot({
+    top_names_by_sex_year <- get_top_names(input$sex, input$year) 
+    ggplot(top_names_by_sex_year, aes(x = sex, y = year)) +
+      geom_col()
+  })
+}
+
+shinyApp(ui = ui, server = server)
+
+
+shinyApp(ui = ui, server = server)
+
+# help to run code at end of each stage
+(1) Add inputs (UI), 
+      # CODE BELOW: Add an input to let the user select sex (M / F)
+      selectInput('sex', 'Select Sex',  c("M","F"))
+      # CODE BELOW: Add a slider to let the user select a year (1880 to 2017)
+      sliderInput('year', 'Select Year', min = 1880, max = 2017, 2010:2017)
+
+(2) Add outputs (UI/Server), 
+   plotOutput('plot') # add out to UI then add render fun to server
+   # create placeholder at this point 
+   output$plot <- renderPlot({ ggplot() })
+
+(3) Update layout, and (UI)
+  titlePanel("Most Popular Names"),
+  sidebarLayout(
+    sidebarPanel(
+  mainPanel(
+
+(4) Update outputs. (Server)
+  output$plot <- renderPlot({
+    top_names_by_sex_year <- get_top_names(input$sex, input$year) 
+    ggplot(top_names_by_sex_year, aes(x = sex, y = year)) +
+      geom_col()
+
+# App 3: Popular Baby Names Redux
+ui <- fluidPage(
+  titlePanel("Most Popular Names"),
+  sidebarLayout(
+    sidebarPanel(
+      selectInput('sex', 'Select Sex', c("M", "F")),
+      sliderInput('year', 'Select Year', 1880, 2013, 1900)
+    ),
+    mainPanel(
+      tabsetPanel(
+        tabPanel('Plot', plotOutput('plot')),
+        tabPanel('Table', tableOutput('table'))
+      )
+    )
+  )
+)
+
+server <- function(input, output, session) {
+  output$plot <- renderPlot({
+    d <- get_top_names(input$year, input$sex) 
+    qplot(name, prop, data = d, geom = 'col')
+  })
+  
+  output$table <- renderTable({
+    get_top_names(input$year, input$sex) 
+  })
+}
+shinyApp(ui = ui, server = server)
+
+(1) Add inputs (UI), 
+   selectInput('sex', 'Select Sex', c("M", "F")),
+      sliderInput('year', 'Select Year', 1880, 2013, 1900)
+
+
+(2) Add outputs (UI/Server), 
+        tabPanel('Plot', plotOutput('plot')),
+        tabPanel('Table', tableOutput('table'))
+  output$plot <- renderPlot({
+   
+    qplot()
+  })
+  
+  output$table <- renderTable({
+  })
+
+(3) Update layout, and (UI)
+  titlePanel("Most Popular Names"),
+  sidebarLayout(
+    sidebarPanel(
+
+  mainPanel(
+      tabsetPanel(
+
+
+(4) Update outputs. (Server)
+  output$plot <- renderPlot({
+    d <- get_top_names(input$year, input$sex) 
+    qplot(name, prop, data = d, geom = 'col')
+  })
+  
+  output$table <- renderTable({
+    get_top_names(input$year, input$sex) 
+  })
+}

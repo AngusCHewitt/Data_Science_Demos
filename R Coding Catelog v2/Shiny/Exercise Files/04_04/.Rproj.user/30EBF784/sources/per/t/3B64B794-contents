@@ -1,0 +1,37 @@
+library("tidyverse")
+library("DT")
+
+function(input, output, session) {
+  output$star_narrow <- renderDT({
+    starwars %>%
+      select(name, species, homeworld, height) %>%
+      arrange(desc(height)) %>%
+      datatable(rownames = FALSE,
+                options = list(dom = "ftip"))
+    
+  })
+  
+  output$star_wide <- renderDT({
+    starwars %>%
+      select(name:homeworld) %>%
+      datatable(
+        options = list(dom = "ftip"),
+        rownames = input$show_rownames,
+        extensions = "Responsive"
+      )
+    
+  })
+  
+  output$star_list <- renderDT({
+    starwars %>%
+      select(name, films, vehicles, starships) %>%
+      mutate_if(is.list, list( ~ map_chr(., ~ paste(.x, collapse = "<br>")))) %>%
+      datatable(
+        options = list(dom = "ftip"),
+        escape = FALSE,
+        rownames = FALSE,
+        extensions = "Responsive"
+      )
+    
+  })
+}

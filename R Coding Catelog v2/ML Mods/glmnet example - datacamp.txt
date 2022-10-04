@@ -1,0 +1,33 @@
+# Create custom indices: myFolds
+myFolds <- createFolds(churn_y, k = 5)
+
+
+
+# Create reusable trainControl object: 
+myControl
+myControl <- trainControl(
+  summaryFunction = twoClassSummary,
+  classProbs = TRUE, # IMPORTANT!
+  
+verboseIter = TRUE,
+  savePredictions = TRUE,
+  index = myFolds)
+
+
+# Fit glmnet model: 
+model_glmnet
+model_glmnet <- train(
+  x = churn_x, 
+  y = churn_y,
+  metric = "ROC",
+  method = "glmnet",
+  trControl = myControl
+)
+
+
+summary(model_glmnet)
+
+
+model_glmnet
+
+table(model_glmnet$pred[["pred"]],model_glmnet$pred[["obs"]])

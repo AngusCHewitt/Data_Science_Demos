@@ -1,0 +1,22 @@
+{
+    "collab_server" : "",
+    "contents" : "",
+    "created" : 1561577922091.000,
+    "dirty" : false,
+    "encoding" : "UTF-8",
+    "folds" : "",
+    "hash" : "0",
+    "id" : "2F603225",
+    "lastKnownWriteTime" : 1561577952,
+    "last_content_update" : 1561577952626,
+    "path" : "/Volumes/Production/Projects/Video/Video In Progress/Building Data Apps with R and Shiny_772334/2_Project/Exercise Files/03_01/server.R",
+    "project_path" : "server.R",
+    "properties" : {
+        "cursorPosition" : "2,2",
+        "scrollLine" : "0"
+    },
+    "relative_order" : 2,
+    "source_on_save" : false,
+    "source_window" : "",
+    "type" : "r_source"
+}

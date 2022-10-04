@@ -1,0 +1,58 @@
+
+
+data a;
+set egtask.loc;
+run;
+
+data b;
+set egtask.drum;
+run;
+
+*-----------------------------------------------------------;
+* repeated measures ANOVA;
+proc glm data=a ; * with "location" as random;
+class method location replicate  ;
+model Assay = method location(method) replicate replicate*method ;
+random location(method) / test;
+test h= method e= location(method);
+
+*-----------------------------------------------------------;
+* get variance components;
+proc varcomp data=a method=ml ; * (subsumed by proc mixed);
+class method location replicate ;
+model ASSAY = method replicate replicate*method location(method) / fixed=3 ;
+*-----------------------------------------------------------;
+proc sort data=a ;
+by method location;
+/* set up the data for the
+* multivariate version of
+* repeated measures ANOVA*/
+proc transpose out=a2(rename=(_1=y1 _2=y2 _3=y3));
+by method location ;
+id replicate ;
+proc glm data=a2;
+class method location;
+model y1 y2 y3 = method;
+repeated replicate / summary ;
+*-----------------------------------------------------------;
+* Output from the "mixed" procedure is presented below.
+* ..............................;
+proc mixed method=ml data=a;
+class method location ;
+model ASSAY = method ;
+random location;
+/* use the "mixed" procedure
+* which allows more general
+* covariance structures to
+* be specified. (SAS 6.08+)*/
+repeated / subject=location group=method ;
+*-----------------------------------------------------------;
+proc mixed method=ml data=b ;
+class drum ;
+model yb = ;
+random drum / s type=ar(1) ;
+/* use the "mixed" procedure
+* to test for a time effect
+* with respect to DRUM.
+* ar(1) = autoregressive
+* covariance structure*/

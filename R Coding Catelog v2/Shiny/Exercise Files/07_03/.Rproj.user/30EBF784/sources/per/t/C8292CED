@@ -1,0 +1,26 @@
+{
+    "collab_server" : "",
+    "contents" : "",
+    "created" : 1557755063896.000,
+    "dirty" : false,
+    "encoding" : "UTF-8",
+    "folds" : "",
+    "hash" : "1334070010",
+    "id" : "C8292CED",
+    "lastKnownWriteTime" : 1557755174,
+    "last_content_update" : 1557755174116,
+    "path" : "~/Google Drive/VisibleData/clients-and-customers/05_present_in-progress/419610011_Lynda_R-&-Shiny_Essential-Skills-for-Building-Dashboards-and-Web-Apps/development/exercises/07_03/data-raw/bechdel-ratings.R",
+    "project_path" : "data-raw/bechdel-ratings.R",
+    "properties" : {
+        "cursorPosition" : "16,0",
+        "scrollLine" : "0",
+        "tempName" : "Untitled1"
+    },
+    "read_only" : false,
+    "read_only_alternatives" : [
+    ],
+    "relative_order" : 1,
+    "source_on_save" : false,
+    "source_window" : "",
+    "type" : "r_source"
+}

@@ -1,0 +1,13 @@
+name: Test
+title: Test
+username:
+account: goosiegander
+server: shinyapps.io
+hostUrl: https://api.shinyapps.io/v1
+appId: 5536936
+bundleId: 5520623
+url: https://goosiegander.shinyapps.io/Test/
+when: 1643436555.43936
+asMultiple: FALSE
+asStatic: FALSE
+ignoredFiles: Screen Shot 2020-02-29 at 9.39.44 pm.png|Shing Input funs.png|Shiny apps.txt|Shiny intro.txt|Exercise Files|R Shiny Template|Shiny App Testing

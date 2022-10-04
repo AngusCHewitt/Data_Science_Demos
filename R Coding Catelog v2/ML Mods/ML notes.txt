@@ -1,0 +1,3 @@
+control (classify = "weighted" and "auto" produced the exact same results, reproducibale given multiple run thoughs)
+
+changes hiegths to small, median and large will be more intutive for punters

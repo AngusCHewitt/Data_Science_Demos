@@ -1,0 +1,152 @@
+# forecast model using tscount 
+## 15-64 with Diabetes 
+
+library(tscount)
+library(tidyverse)
+library(forecast)
+library(fpp)
+
+Dataset <- read.table("//internal.vic.gov.au/DHHS/HomeDirs6/ahew2812/Documents/Renal Model Data 2005-2017.csv",
+   header=TRUE, sep=",", na.strings="NA", dec=".", strip.white=TRUE)
+
+str(Dataset)
+
+## patient 15-64 with Diabetes
+Dataset %>%
+filter ( Age_Brackets == "15-64" & Diabetes == "Y") -> Pop_15_64_DY
+
+# renial dialysis t.s. 
+acf(Pop_15_64_DY$Dialysis)
+pacf(Pop_15_64_DY$Dialysis)
+
+# diff 1 for pop 65+ with No Diabetes is stationary
+acf(diff(Pop_15_64_DY$Dialysis),lag=12)
+
+# trend line
+regressors_renial <- ts(c(seq(1:13)),start = 2005, frequency = 1)
+
+# time and transplant xcof.'s
+xcof <- as.data.frame(cbind(Year=regressors_renial,Trans= Pop_15_64_DY$Transplants))
+
+# dialysis t.s.
+ts_15_64_DY <- ts(data=Pop_15_64_DY$Dialysis,start = 2005, frequency = 1)
+
+x = as.data.frame(cbind(Years=(1:13)))
+
+Mod_15_64_DY1 <- tsglm(ts=ts_15_64_DY , model = list(past_obs = 1,past_mean=10),
+ link = c("log"),xreg = regressors_renial, distr = c("poisson")) # best Mod
+
+Mod_15_64_DY2 <- tsglm(ts=ts_15_64_DY , model = list(past_obs = 1,past_mean=8),
+ link = c("log"),xreg = regressors_renial, distr = c("poisson"))
+
+Mod_15_64_DY3 <- tsglm(ts=ts_15_64_DY , model = list(past_obs = 1,past_mean=4),
+ link = c("log"),xreg =  regressors_renial, distr = c("poisson"))
+
+Mod_15_64_DY4 <- tsglm(ts=ts_15_64_DY , model = list(past_obs = 1,past_mean=12),
+ link = c("log"),xreg =  regressors_renial, distr = c("poisson"))
+
+
+# linear regression with ARIMA errors
+ LinArima_Mod <- Arima(ts_15_64_DY, xreg=x, order=c(4,1,8)) # best mod
+
+ LinArima_Mod2 <- Arima(ts_15_64_DY, xreg=x, order=c(1,2,8))
+
+ LinArima_Mod3 <-  Arima(ts_15_64_DY, xreg=x, order=c(1,1,4))
+
+# review mod residuals and acf chart
+checkresiduals(LinArima_Mod)
+acf(LinArima_Mod$residuals)
+
+# best mod => auto correlations stable, min. total residuals out of all mods
+
+# abs sum of residuals
+sum(abs(Mod_15_64_DY1$residuals)) 
+sum(abs(Mod_15_64_DY2$residuals)) 
+sum(abs(Mod_15_64_DY3$residuals)) 
+sum(abs(Mod_15_64_DY4$residuals))
+sum(abs(LinArima_Mod$residuals))  # = 50.82  
+sum(abs(LinArima_Mod2$residuals)) 
+sum(abs(LinArima_Mod3$residuals)) 
+
+
+##-- tscount: forecast model --##
+
+##-- testing trained model
+
+Dataset %>%
+filter ( Age_Brackets == "15-64" & Diabetes == "Y" & Year < 2017) -> Pop_15_64_DY_tr
+
+
+# renial dialysis t.s. 
+acf(Pop_15_64_DY_tr$Dialysis)
+pacf(Pop_15_64_DY_tr$Dialysis)
+
+# diff 1 for pop 65+ with No Diabetes is stationary
+acf(diff(Pop_15_64_DY_tr$Dialysis))
+
+ts_15_64_DY_tr <- ts(data=Pop_15_64_DY_tr$Dialysis,start = 2005, frequency = 1)
+
+regressors_renial_tr <- ts(c(seq(1:12)),start = 2005, frequency = 1)
+
+# time and transplant xcof.'s
+nxcof <- as.data.frame(cbind(Year=regressors_renial_tr,Trans=  Pop_15_64_DY_tr$Transplants))
+
+Mod_15_64_DY1_tr <- tsglm(ts=ts_15_64_DY_tr, model = list(past_obs = c(1,4),past_mean=9),
+ link = c("log"),xreg = regressors_renial_tr, distr = c("poisson")) # best mod
+
+Mod_15_64_DY2_tr <- tsglm(ts=ts_15_64_DY_tr, model = list(past_obs = c(1,4),past_mean=8),
+ link = c("log"),xreg = nxcof, distr = c("poisson"))
+
+
+
+# visualise residuals
+checkresiduals(Mod_15_64_DY1_tr ) # better mod
+checkresiduals(Mod_15_64_DY2_tr)
+
+pre_mod1 <- predict(Mod_15_64_DY1_tr,n.ahead=1,newxreg=13)
+
+# point ests and intervals
+train_data <- cbind(pre_mod1$median,pre_mod1$interval)
+
+# exp smoothing model training mod
+ ets_fit_tr <- ets(ts_15_64_DY_tr) # 2.2% error
+ pre_mod1 <- predict(ets_fit_tr,h=1,newxreg=13)
+
+((ts_15_64_DY[13] - pre_mod1$median[1])/ ts_15_64_DY[13])*100 # error = -1.68% # *--best mod--*
+
+
+
+##-- Comparison models: Stocastic and Deterministic mods --##
+
+trend <- seq_along(ts_15_64_DY_tr) # number of years in t.s.  
+(fit1 <- auto.arima(ts_15_64_DY_tr, d=0, xreg=trend )) # fit deterministic lin mod
+
+(fit2 <- auto.arima(ts_15_64_DY_tr, d=1)) # fit stoc. mod
+
+# visualise residuals
+checkresiduals(fit1 ) 
+checkresiduals(fit2 )
+
+# forecast 10 steps ahead # poisson mod residuals are much more stationary
+mod3 <- forecast(fit1 ,xreg = cbind(trend = length(trend ) + 1:10))
+
+mod4 <- forecast(fit2 , h=10)
+
+((ts_15_64_DY[13] - mod3$mean[1])/ts_15_64_DY[13])*100 # error = -2.00% 
+((ts_15_64_DY[13] - mod4$mean[1])/ts_15_64_DY[13])*100 # error = -0.52% # better mod
+
+
+##-- Forecast Next 10 years using best mod --##
+
+# fit Linear model with arima errors
+(fit1 <- auto.arima(ts_15_64_DY, d=1, xreg=x))
+
+# x coefficient
+ntrend = as.data.frame(cbind(Years=(14:23)))
+
+# visualise forecast - no cont int due to negative s.d.
+plot( forecast(LinArima_Mod ,h=10,xreg=ntrend)) 
+forecast(LinArima_Mod ,h=10,xreg=ntrend,level=95) # best forecast
+
+
+

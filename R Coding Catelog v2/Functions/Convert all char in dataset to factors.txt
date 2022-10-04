@@ -1,0 +1,4 @@
+#####Reorder Factor Levels#####
+#####Reorder Factor Levels#####
+#####Convert all character variables to factors#####
+test <- ChrToFactor(test)

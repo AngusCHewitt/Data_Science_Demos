@@ -1,0 +1,22 @@
+navbarPage(
+  "DT Interactive Tables",
+  tabPanel(
+    "Star Narrow",
+    fluidPage(
+      
+    )
+  ),
+  tabPanel(
+    "Star Wide",
+    fluidPage(
+      
+    )
+  ),
+  tabPanel(
+    "Star List",
+    fluidPage(
+      
+    )
+  ),
+  collapsible = TRUE
+)

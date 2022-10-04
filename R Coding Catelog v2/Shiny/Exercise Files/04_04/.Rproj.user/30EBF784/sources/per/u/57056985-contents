@@ -1,0 +1,12 @@
+
+
+
+
+output$star_wide <- renderDT({
+  starwars %>%
+    select(name:homeworld)
+  
+},
+extensions = "Responsive",
+options = list(dom = "ftip"),
+rownames = FALSE)
