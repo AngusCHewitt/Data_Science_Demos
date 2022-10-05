@@ -1,8 +1,0 @@
-Transplant <-
-matrix(c(14, 25, 0, 181),
-       nrow = 2,
-       dimnames = list("Day of transplant" = c("+", "-"),
-                       "1 year from trasplant" = c("+", "-")))
-Transplant
-mcnemar.test(Transplant)
-## => significant change (people with a higher incidence of disease from 1 day to 1 year)

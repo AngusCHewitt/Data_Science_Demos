@@ -1,4 +1,0 @@
-
-# detach pgks from search path
-detach( "package:dplyr")
-detach( "package:purrr")

@@ -1,8 +1,0 @@
-iris %>%
-  mutate_all(funs(guess_parser(.)))
-
-
-
-
-
-
