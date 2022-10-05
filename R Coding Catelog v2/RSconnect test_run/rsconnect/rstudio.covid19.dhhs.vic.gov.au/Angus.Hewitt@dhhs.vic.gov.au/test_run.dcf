@@ -1,0 +1,12 @@
+name: test_run
+title: test_run
+username: Angus.Hewitt@dhhs.vic.gov.au
+account: Angus.Hewitt@dhhs.vic.gov.au
+server: rstudio.covid19.dhhs.vic.gov.au
+hostUrl: https://rstudio.covid19.dhhs.vic.gov.au/__api__
+appId: 311
+bundleId: 8497
+url: https://rstudio.covid19.dhhs.vic.gov.au/content/311/
+when: 1623728089.13858
+asMultiple: FALSE
+asStatic: FALSE
