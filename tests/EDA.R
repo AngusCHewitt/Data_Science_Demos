@@ -25,7 +25,7 @@ liver_dt <- read_csv("data/indian_liver_patient.csv")
 liver_dt %>%
   mutate(target_Var = if_else(Dataset < 2, 1L, 0L)) -> liver_dt
 
-table(liver_dt$target_Var)
+prop.table(table(liver_dt$target_Var, liver_dt$Gender),2)
 # 0 == 167 no liver disease
 # 1 == 416 liver desease 
 # 
@@ -127,10 +127,11 @@ table(liver_dt$target_Var)
     mutate(obs = 1:nrow(.)) %>%
     gather("var", "values", Total_Bilirubin:Albumin_and_Globulin_Ratio) %>%
     mutate(values = log(.$values + 1)) %>%
-    spread(var, values) -> liver_dt
-
+    spread(var, values) -> liver_Log_dt
   
-  boxplot(log(liver_dt$Aspartate_Aminotransferase))
+  
+  
+  save(liver_dt, file = "data/liver_dt.rds")
 
   
   ## fit mixed model 
@@ -138,30 +139,42 @@ table(liver_dt$target_Var)
   ## fixed effects all inmprove the pred power of the model 
   ## inserting log in lienar eq s the same effects as prior trasnformations, adv is you an input original values 
   ## in the app 
-  fitted_Mixed_mod <- glmer(target_Var ~ ns(Direct_Bilirubin + 1) + 
+  fitted_Mixed_mod <- glmer(target_Var ~ ns(Direct_Bilirubin) + 
                               ns(Alkaline_Phosphotase) + ns(Alamine_Aminotransferase) + 
                               ns(Aspartate_Aminotransferase) + ( ns(Age, 2)  | Gender), 
-                            family = binomial(link = "logit"), data = liver_dt,
+                            family = binomial(link = "logit"), data = liver_Log_dt,
                             control = glmerControl(optimizer = "bobyqa", calc.derivs = FALSE), nAGQ = 0L)
   
   
-  summary(fitted_Mixed_mod)
-  
-  ## fit mixed model 
-  # fitted_GLM_mod <- glm(target_Var ~ ns(Age, 2) + ns(Direct_Bilirubin) + 
-  #                             ns(Alkaline_Phosphotase) + ns(Alamine_Aminotransferase) + 
-  #                             ns(Aspartate_Aminotransferase) + as.factor(Gender), 
-  #                           family = binomial(link = "logit"), data = liver_dt)
-
+  #save(fitted_Mixed_mod, file = "data/fitted_Mixed_mod.rds")
   
   summary(fitted_GLM_mod)
-  anova(fitted_Mixed_mod)
-  
+  BIC(fitted_Mixed_mod)
   ranef(fitted_Mixed_mod)
   
+  
+  ## add fitted pred to liver log dt
+  liver_Log_dt %>%
+    mutate(pred = add_predictions(.,fitted_Mixed_mod, type = "response")$pred) -> liver_Log_dt
+  
+  
+  save(liver_Log_dt, file = "data/liver_Log_dt.rds")
+  
+  
+  ## percentile array, .01-.99, by = .01
+  percentiles <- quantile(liver_Log_dt$pred, probs = seq(.01, .99, by = .01))
+  
+  ## create percentile dataset
+  percentiles_DT <- data.frame(Percentiles = attributes(percentiles)$names,
+                               values = percentiles)
+  
+  
+  save(percentiles_DT, file = "data/percentiles_DT.rds")
+  
+
   ggeffects::ggpredict(fitted_Mixed_mod) # reviewmoeffects
   plot_model(fitted_Mixed_mod, type = "resid") # fixed effects plots
-  plot_model(fitted_Mixed_mod, type = "eff") # residuals
+  plot_model(fitted_Mixed_mod, type = "eff", terms = "Alkaline_Phosphotase") # residuals
   plot_model(fitted_Mixed_mod, type = "re") # residuals
   
   
@@ -191,4 +204,13 @@ table(liver_dt$target_Var)
               Cnt = sum(n())) 
   
   
+  ## test model effects 
+  data <- liver_dt[1,] 
+  sample <- liver_dt[2:5,]
+  combined_Newdata_sample <- rbind(data, sample)
+  
+  ## need atleast 5 obs to generate se.fit, take the first obs resultsm viz an eeorbar , max / min (0,1) 
+  predict(fitted_Mixed_mod, newdata = combined_Newdata_sample, type = "response", se.fit = TRUE) # add standard errors 
+  
+
   
