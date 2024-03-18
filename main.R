@@ -1,9 +1,12 @@
-library(shiny) 
 library(tidyverse) # tody dt 
 library(plotly) # interactive plots
+library(shiny) 
 library(lme4) # mixed mod
 library(splines) # ns fun 
 library(shinydashboard)
+library(modelr) # add pred var 
+library(ggeffects) # model effects data
+
 
 
 #liver_dt <- read.csv("data/indian_liver_patient.csv") # handle a df, easier to index 
@@ -19,7 +22,9 @@ sidebar <- dashboardSidebar( # side bar layout
     sidebarMenu(
     id = "tabs",
     menuItem("Dashboard", tabName = "dashboard", icon = icon("dashboard")),
-    menuItem("Charts", tabName = "charts", icon = icon("glyphicon glyphicon-signal", lib="glyphicon"))
+    menuItem("Charts", tabName = "charts", icon = icon("glyphicon glyphicon-signal", lib="glyphicon"),
+             menuSubItem("Age_&_Gender_Mod_Effects", tabName = "subitem1"), # sub item age gender model effects
+             menuSubItem("Clinical_Tests_Mod_Effects", tabName = "subitem2")) # "" clincial tests 
     )) 
   
 body <-  dashboardBody( # value box outputs 
@@ -56,10 +61,35 @@ body <-  dashboardBody( # value box outputs
       ) # main Panel 
       ) # sidebar layout, 
       ), # close tab 1
-      tabItem(tabName = "charts",  # select dashboard - tab 2 
-              selectInput("model_Effects", "select chart", c("1", "2"), "1") # tab 2
-      ) # 
-      )) # close obj 
+      tabItem(tabName = "subitem1",  # select dashboard - tab 2 
+              "Age & Gender Model effects", # age and gedner model effcts interactive plot 
+              plotlyOutput("model_Effects_plots"),
+              ## comments on Age and Gender mod effects 
+              box(title = "Comments", width = NULL, background = "maroon",
+              "The clinical test variables not included in the above effects charts are held at 
+              constant values (median values)")), # end subitem 1  
+     
+       tabItem("subitem2",
+            "Clinical Test Model effects", ## clincail test "" 
+            selectInput("clinical_Test_model_Effects_inputs", "Select Clinical Test", c("Direct_Bilirubin", "Alkaline_Phosphotase", 
+            "Alamine_Aminotransferase", "Aspartate_Aminotransferase"), "Direct Bilirubin"),
+            
+            fluidRow(
+            box(title = "Model Effects Chart", background = "maroon", solidHeader = TRUE,
+              plotlyOutput("clinical_Test_model_Effects")),
+            
+            box(title = "Model Effects Info", background = "black", solidHeader = TRUE,
+            verbatimTextOutput("clinical_Test_model_Effects_text") # tab 2)
+            )), # close first row
+            
+            ## comments on the fixed effects  
+            fluidRow(
+              box(title = "Comments", width = NULL, background = "aqua",
+                  "Note that the values displayed in these charts are logarithmic values of the original
+                  clinical test values, this allows users to view the actuals relationship between x ~ y"), # end subitem 1    
+              ) # close second row 
+              ) 
+              )) # close obj 
 
   
 
@@ -210,7 +240,49 @@ server <- function(input, output) {
     })
     
 
+output$model_Effects_plots <- renderPlotly({    
   
+  source("app/logic/age_Gender_mod_effects.R")
+    
+  combined_Pred_sample_DT <- age_Gender_mod_Effects_funs(liver_Log_dt, fitted_Mixed_mod) # fun to create age and gender 
+  ## mod effects datasets 
+  
+    ## ggplot of prob errorbars 
+    combined_Pred_sample_DT %>%
+      ggplot(aes(x = Age, y = Prediction, fill = Gender)) + geom_line() + 
+      geom_ribbon(aes(ymin = lower_bound, ymax = upper_bound), alpha = .2) + 
+      facet_wrap(~Gender) +
+      theme_classic() + theme(legend.position = "none") + labs(x = "", y = "Probability of liver Disease (%)") -> p
+    
+    ## interactive viz 
+    ggplotly(p)
+    })
+
+
+## model effects for clinical tests
+output$clinical_Test_model_Effects <- renderPlotly({    
+  
+  mod_Effects_dt <- ggpredict(fitted_Mixed_mod)
+  
+  ggplotly(plot(mod_Effects_dt[[input$clinical_Test_model_Effects_inputs]])) # index ggeffects obj by
+  ## mod var selection 
+  
+  })
+
+## output text info, ie.e value of varibale held constant 
+output$clinical_Test_model_Effects_text <- renderPrint({    
+  
+  mod_Effects_dt <- ggpredict(fitted_Mixed_mod)
+  
+  
+  #print(mod_Effects_dt[["Direct_Bilirubin"]]) # index ggeffects obj by
+  
+  print(mod_Effects_dt[[input$clinical_Test_model_Effects_inputs]]) # index ggeffects obj by
+  ## mod var selection 
+  
+})
+
+
   
 } # end of server
 
