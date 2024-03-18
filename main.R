@@ -10,12 +10,23 @@ library(shinydashboard)
 load("data/fitted_Mixed_mod.rds") # liver mixed model 
 load("data/liver_dt.rds") # liver mixed model 
 load("data/percentiles_DT.rds") # pred percentiles 
+load("data/liver_Log_dt.rds") # log dt
 
 # Define UI for application that draws a histogram
-ui <- dashboardPage(
-  dashboardHeader(title = "Health Analytics App"),
-  dashboardSidebar(),
-  dashboardBody( # value box outputs 
+header <-  dashboardHeader(title = "Health Analytics App") # title 
+  
+sidebar <- dashboardSidebar( # side bar layout 
+    sidebarMenu(
+    id = "tabs",
+    menuItem("Dashboard", tabName = "dashboard", icon = icon("dashboard")),
+    menuItem("Charts", tabName = "charts", icon = icon("glyphicon glyphicon-signal", lib="glyphicon"))
+    )) 
+  
+body <-  dashboardBody( # value box outputs 
+    
+    tabItems( # tab items list 
+      tabItem(tabName = "dashboard",  # select dashboard - tab 1 
+    
     sidebarLayout(
     sidebarPanel( 
     
@@ -36,14 +47,20 @@ ui <- dashboardPage(
     
     numericInput("Aspartate_Aminotransferase_input_id", "Aspartate Aminotransferase", value = median(liver_dt$Aspartate_Aminotransferase), # test scorres
                  min = min(liver_dt$Aspartate_Aminotransferase), max = max(liver_dt$Aspartate_Aminotransferase), step = 1) # original value need convert to log scale 
-    ),
+    ), # sidebar panel 
     mainPanel(
     fluidRow(
       valueBoxOutput("pred_Point_est_tb"), # point est 
       valueBoxOutput("percentiles_tb"),
-      valueBoxOutput("confidence_Internal_tb")))))) # percentiles 
-  
-  
+      valueBoxOutput("confidence_Internal_tb")) # fluid row
+      ) # main Panel 
+      ) # sidebar layout, 
+      ), # close tab 1
+      tabItem(tabName = "charts",  # select dashboard - tab 2 
+              selectInput("model_Effects", "select chart", c("1", "2"), "1") # tab 2
+      ) # 
+      )) # close obj 
+
   
 
 # Define server logic required to draw a histogram
@@ -199,5 +216,6 @@ server <- function(input, output) {
 
 
 
-# Run the application 
-shinyApp(ui = ui, server = server)
+shinyApp(
+  ui = dashboardPage(header, sidebar, body),
+  server = server)
