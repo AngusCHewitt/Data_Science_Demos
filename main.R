@@ -7,7 +7,7 @@ library(shinydashboard)
 library(modelr) # add pred var 
 library(ggeffects) # model effects data
 
-
+mod_Effects_dt <- ggpredict(fitted_Mixed_mod) # model effects 
 
 #liver_dt <- read.csv("data/indian_liver_patient.csv") # handle a df, easier to index 
 load("data/fitted_Mixed_mod.rds") # liver mixed model 
@@ -21,6 +21,7 @@ header <-  dashboardHeader(title = "Health Analytics App") # title
 sidebar <- dashboardSidebar( # side bar layout 
     sidebarMenu(
     id = "tabs",
+    menuItem("Context", tabName = "context", icon = icon("glyphicon glyphicon-pencil", lib="glyphicon")),
     menuItem("Dashboard", tabName = "dashboard", icon = icon("dashboard")),
     menuItem("Charts", tabName = "charts", icon = icon("glyphicon glyphicon-signal", lib="glyphicon"),
              menuSubItem("Age_&_Gender_Mod_Effects", tabName = "subitem1"), # sub item age gender model effects
@@ -30,6 +31,40 @@ sidebar <- dashboardSidebar( # side bar layout
 body <-  dashboardBody( # value box outputs 
     
     tabItems( # tab items list 
+      tabItem(tabName = "context",  # select dashboard - tab 1 
+              
+              fluidRow(
+                tabBox(
+                title = "Context / Data",
+              
+              tabPanel("Context",    
+               box(title = "", width = NULL, background = "light-blue",
+                "This Interactive shiny app was constructed to illustrate the value an predictive analytics 
+                app can provide to a decision maker who truely wants to make data driven decisions.",
+                br(), br(),
+                "The use-case for this app could be a doctor/nurse which has collected a series of test
+                results related to patient who they suspect has liver disease. Based on the 
+                figures provided by a range test and demographic info what is the probabliity that this
+                patient has liver disease ?", br(), br(), 
+                "An app with a statistical model available in the background can
+                provide this information, simply input the patient's test results and demographic info 
+                to generate the probabliity (Dashbaord)")
+                 ),         
+                       
+                  
+              tabPanel("Data",
+              box(title = "", width = NULL, background = "light-blue",
+              "This data set contains 416 liver patient records and 167 non liver patient records 
+               collected from North East of Andhra Pradesh, India.",
+               br(),
+               "There are 441 male patient records and 142 female patient records.",
+               br(), br(),
+               "Data - Ref: https://www.kaggle.com/datasets/uciml/indian-liver-patient-records")
+                 )
+                 )
+                 )
+                 ), # end subitem 1  
+          
       tabItem(tabName = "dashboard",  # select dashboard - tab 1 
     
     sidebarLayout(
@@ -86,7 +121,8 @@ body <-  dashboardBody( # value box outputs
             fluidRow(
               box(title = "Comments", width = NULL, background = "aqua",
                   "Note that the values displayed in these charts are logarithmic values of the original
-                  clinical test values, this allows users to view the actuals relationship between x ~ y"), # end subitem 1    
+                  clinical test measures, this allows users to view the actuals relationship between x ~ y as 
+                  most of the variables are extreme outliers"), # end subitem 1    
               ) # close second row 
               ) 
               )) # close obj 
@@ -262,8 +298,6 @@ output$model_Effects_plots <- renderPlotly({
 ## model effects for clinical tests
 output$clinical_Test_model_Effects <- renderPlotly({    
   
-  mod_Effects_dt <- ggpredict(fitted_Mixed_mod)
-  
   ggplotly(plot(mod_Effects_dt[[input$clinical_Test_model_Effects_inputs]])) # index ggeffects obj by
   ## mod var selection 
   
@@ -271,16 +305,10 @@ output$clinical_Test_model_Effects <- renderPlotly({
 
 ## output text info, ie.e value of varibale held constant 
 output$clinical_Test_model_Effects_text <- renderPrint({    
-  
-  mod_Effects_dt <- ggpredict(fitted_Mixed_mod)
-  
-  
-  #print(mod_Effects_dt[["Direct_Bilirubin"]]) # index ggeffects obj by
-  
-  print(mod_Effects_dt[[input$clinical_Test_model_Effects_inputs]]) # index ggeffects obj by
-  ## mod var selection 
-  
-})
+
+  print(mod_Effects_dt[[input$clinical_Test_model_Effects_inputs]]) # index ggeffects obj ## mod var selection 
+
+  })
 
 
   
