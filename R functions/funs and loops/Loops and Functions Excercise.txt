@@ -1,0 +1,28 @@
+# use combination of loops and functions
+data_details <- function(x) {
+
+  colname <- names(x)
+ 
+  # loop through each element of x to retrieve element types
+  types <- vector("character",ncol(x))
+  for(i in seq_along(x)) {
+    types[[i]] <- typeof(x[[i]]) 
+  }
+  
+  # loop through each element of x to retrieve element classes
+  classes <- vector("character",ncol(x))
+  for(i in seq_along(x)) {
+    classes[[i]] <- stringi::stri_flatten(class(x[[i]])) 
+  
+  # capture 1st row for each col.  
+  start_row <-(x[1,1:ncol(x)])
+  first_obs <- as.vector(t(start_row))
+  
+  # capture Last row for each col.
+  end_row <- (x[nrow(x),1:ncol(x)])
+  last_obs <- as.vector(t(end_row))
+  
+  
+  }
+  data.frame(colname,types,classes,first_obs,last_obs) # return results as d.f.
+  }
